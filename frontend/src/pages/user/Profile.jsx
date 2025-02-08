@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { HiOutlineUser, HiOutlineShoppingBag, HiOutlineHeart, HiOutlineLocationMarker, HiOutlineCog, HiOutlineLogout } from 'react-icons/hi';
@@ -8,8 +8,14 @@ const Profile = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
 
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  // If no user, render nothing while the effect triggers navigation
   if (!user) {
-    navigate('/login');
     return null;
   }
 
@@ -113,6 +119,7 @@ const Profile = () => {
             className={`flex items-center gap-4 p-4 ${
               index !== menuItems.length - 1 ? 'border-b' : ''
             }`}
+            onClick={() => navigate(item.link)}
           >
             {item.icon}
             <span>{item.label}</span>

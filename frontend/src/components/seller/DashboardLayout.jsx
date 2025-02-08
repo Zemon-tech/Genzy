@@ -13,6 +13,11 @@ const DashboardLayout = () => {
     }
   }, [navigate]);
 
+  // Return null while checking authentication
+  if (!localStorage.getItem('sellerAuth')) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen w-full bg-gray-100 flex">
       {/* Sidebar - hidden on mobile, shown on desktop */}
