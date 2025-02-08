@@ -27,6 +27,7 @@ function App() {
               <Route path="/seller" element={<DashboardLayout />}>
                 <Route index element={<Navigate to="/seller/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="products" element={<div className="p-4">Products page coming soon...</div>} />
                 {/* Add other seller routes here */}
               </Route>
             </Routes>
