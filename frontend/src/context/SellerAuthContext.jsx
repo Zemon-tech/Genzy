@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import supabase from '../config/supabase';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -12,13 +13,30 @@ export const SellerAuthProvider = ({ children }) => {
     // Check if seller is logged in on component mount
     const loggedInSeller = localStorage.getItem('sellerAuth');
     if (loggedInSeller) {
-      setSeller(JSON.parse(loggedInSeller));
+      const sellerData = JSON.parse(loggedInSeller);
+      setSeller(sellerData);
+      // Set Supabase session
+      if (sellerData.session?.access_token) {
+        supabase.auth.setSession({
+          access_token: sellerData.session.access_token,
+          refresh_token: sellerData.session.refresh_token
+        });
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
+      // First, authenticate with Supabase
+      const { data: supabaseData, error: supabaseError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (supabaseError) throw supabaseError;
+
+      // Then authenticate with your backend
       const response = await fetch(`${API_URL}/seller/auth/login`, {
         method: 'POST',
         headers: {
@@ -35,7 +53,7 @@ export const SellerAuthProvider = ({ children }) => {
 
       const sellerData = {
         ...data.data.user,
-        session: data.data.session,
+        session: supabaseData.session, // Use Supabase session
       };
 
       setSeller(sellerData);
@@ -68,7 +86,8 @@ export const SellerAuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setSeller(null);
     localStorage.removeItem('sellerAuth');
   };

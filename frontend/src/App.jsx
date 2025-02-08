@@ -8,6 +8,7 @@ import Profile from './pages/user/Profile';
 import Login from './pages/user/Login';
 import SellerLogin from './pages/seller/Login';
 import Dashboard from './pages/seller/Dashboard';
+import AddProduct from './pages/seller/AddProduct';
 import DashboardLayout from './components/seller/DashboardLayout';
 import { AuthProvider } from './context/AuthContext';
 import { SellerAuthProvider } from './context/SellerAuthContext';
@@ -28,6 +29,7 @@ function App() {
                 <Route index element={<Navigate to="/seller/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="products" element={<div className="p-4">Products page coming soon...</div>} />
+                <Route path="add-product" element={<AddProduct />} />
                 {/* Add other seller routes here */}
               </Route>
             </Routes>
