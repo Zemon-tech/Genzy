@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../config/supabase';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5011/api';
 
 const SellerAuthContext = createContext(null);
 
