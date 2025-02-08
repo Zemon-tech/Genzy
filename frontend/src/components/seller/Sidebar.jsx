@@ -5,6 +5,7 @@ const Sidebar = () => {
   
   const menuItems = [
     { path: '/seller/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/seller/products', label: 'Products', icon: '📦' },
     { path: '/seller/add-product', label: 'Add Product', icon: '➕' },
     { path: '/seller/orders', label: 'Orders to Dispatch', icon: '📦' },
     { path: '/seller/completed-orders', label: 'Completed Orders', icon: '✅' },
