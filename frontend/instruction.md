@@ -79,6 +79,7 @@ The backend will be built using *MongoDB* and will have a well-structured set of
 ### *4. Order Management*
 - *Orders to Dispatch:* Table with Order ID, Customer Name, Product, Status.
 - *Completed Orders:* List of delivered orders.
+- *Developer:* madhav varshney
 
 ### *5. Size Chart Management*
 - Dropdown to select category.

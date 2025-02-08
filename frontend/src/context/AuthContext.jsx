@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react'
+import { supabase } from '../config/supabaseClient'
+import { useNavigate } from 'react-router-dom'
 
 // Sample user credentials
 export const SAMPLE_USER_CREDS = {
@@ -6,40 +8,54 @@ export const SAMPLE_USER_CREDS = {
   password: 'User@123'
 };
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({})
+
+export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    // Check if user is logged in on component mount
-    const loggedInUser = localStorage.getItem('userAuth');
-    if (loggedInUser) {
-      setUser(JSON.parse(loggedInUser));
+    // Check current session
+    checkUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const checkUser = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user || null)
+    } catch (error) {
+      console.error('Error checking auth:', error)
+    } finally {
+      setLoading(false)
     }
-  }, []);
+  }
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('userAuth', JSON.stringify(userData));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('userAuth');
-  };
+  const value = {
+    user,
+    loading,
+    signUp: (data) => supabase.auth.signUp(data),
+    signIn: (data) => supabase.auth.signInWithPassword(data),
+    signOut: async () => {
+      await supabase.auth.signOut()
+      setUser(null)
+      navigate('/login')
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}; 
+  )
+} 

@@ -1,28 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabaseClient';
 import { HiOutlineUser, HiOutlineShoppingBag, HiOutlineHeart, HiOutlineLocationMarker, HiOutlineCog, HiOutlineLogout } from 'react-icons/hi';
 
 const Profile = () => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
+    checkUser();
+    // Add listener for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [navigate]);
+
+  const checkUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        // Fetch user profile
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) throw error;
+        setProfile(profile);
+      } else {
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [user, navigate]);
-
-  // If no user, render nothing while the effect triggers navigation
-  if (!user) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
   };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
   const menuItems = [
     {
@@ -56,10 +94,10 @@ const Profile = () => {
           onClick={() => setShowDropdown(!showDropdown)}
         >
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{user.avatar}</span>
+            <span className="text-2xl">{user?.avatar}</span>
             <div>
-              <h2 className="font-semibold">{user.name}</h2>
-              <p className="text-sm text-gray-600">{user.email}</p>
+              <h2 className="font-semibold">{user?.name}</h2>
+              <p className="text-sm text-gray-600">{user?.email}</p>
             </div>
           </div>
           <span className="text-gray-400">▼</span>
