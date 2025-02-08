@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const supabase = require('../../config/supabase');
 
 exports.signup = async (req, res) => {
     try {
