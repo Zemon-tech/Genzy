@@ -1,130 +1,203 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { HiOutlineUser, HiOutlineShoppingBag, HiOutlineHeart, HiOutlineLocationMarker, HiOutlineCog, HiOutlineLogout } from 'react-icons/hi';
+import supabase from '../../config/supabase';
+import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
+import { Skeleton } from '../../components/ui/skeleton';
+import ProfileSection from '../../components/user/ProfileSection';
+import {
+  ShoppingBag,
+  Heart,
+  User,
+  MapPin,
+  Settings,
+  LogOut
+} from 'lucide-react';
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
+      return;
     }
+
+    const fetchUserProfile = async () => {
+      try {
+        if (!user) return;
+
+        console.log('Current user ID:', user.id); // Debug log
+
+        // First try to fetch the existing profile
+        let { data: profile, error: fetchError } = await supabase
+          .from('user_profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error('Error fetching profile:', fetchError);
+          setError('Failed to load profile. Please try again later.');
+          return;
+        }
+
+        if (!profile) {
+          console.log('Creating new profile for user:', user.id); // Debug log
+          
+          const { data: newProfile, error: insertError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: user.id,
+              full_name: user.user_metadata?.full_name || '',
+              phone_number: user.phone || '',
+              address: ''
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            console.error('Error details:', {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint
+            });
+            setError('Failed to create profile. Please try again later.');
+            return;
+          }
+
+          console.log('Successfully created profile:', newProfile); // Debug log
+          profile = newProfile;
+        }
+
+        setUserProfile(profile);
+      } catch (err) {
+        console.error('Error in profile operation:', err);
+        setError('An unexpected error occurred. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
   }, [user, navigate]);
 
-  // If no user, render nothing while the effect triggers navigation
-  if (!user) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
-  const menuItems = [
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const sections = [
     {
-      icon: <HiOutlineShoppingBag className="w-6 h-6" />,
+      icon: ShoppingBag,
       label: 'My Orders',
-      link: '/orders',
+      onClick: () => navigate('/orders')
     },
     {
-      icon: <HiOutlineHeart className="w-6 h-6" />,
+      icon: Heart,
       label: 'Wishlist',
-      link: '/wishlist',
+      onClick: () => navigate('/wishlist')
     },
     {
-      icon: <HiOutlineLocationMarker className="w-6 h-6" />,
-      label: 'Addresses',
-      link: '/addresses',
+      icon: User,
+      label: 'Manage Account',
+      onClick: () => navigate('/account')
     },
     {
-      icon: <HiOutlineCog className="w-6 h-6" />,
+      icon: MapPin,
+      label: 'Address',
+      onClick: () => navigate('/address')
+    },
+    {
+      icon: Settings,
       label: 'Settings',
-      link: '/settings',
-    },
+      onClick: () => navigate('/settings')
+    }
   ];
 
+  if (!user) return null;
+
   return (
-    <div className="pb-16 bg-gray-50 min-h-screen">
-      {/* Profile Header */}
-      <div className="relative">
-        <div 
-          className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm cursor-pointer"
-          onClick={() => setShowDropdown(!showDropdown)}
-        >
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">{user.avatar}</span>
-            <div>
-              <h2 className="font-semibold">{user.name}</h2>
-              <p className="text-sm text-gray-600">{user.email}</p>
-            </div>
-          </div>
-          <span className="text-gray-400">▼</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-md mx-auto bg-white min-h-screen">
+        {/* Profile Header */}
+        <div className="flex flex-col items-center pt-8 pb-6 px-4 border-b">
+          {loading ? (
+            <>
+              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-6 w-32 mt-4" />
+              <Skeleton className="h-4 w-48 mt-2" />
+            </>
+          ) : (
+            <>
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user.user_metadata?.avatar_url} />
+                <AvatarFallback>
+                  {getInitials(userProfile?.full_name || user.email)}
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="mt-4 text-xl font-semibold">
+                {userProfile?.full_name || 'User'}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {userProfile?.phone_number || user.email}
+              </p>
+              {error && (
+                <p className="text-sm text-red-500 mt-2">
+                  Error loading profile: {error}
+                </p>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Dropdown Menu */}
-        {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-10">
-            <div 
-              className="p-3 hover:bg-gray-50 cursor-pointer flex items-center space-x-2"
-              onClick={() => {
-                setShowDropdown(false);
-                navigate('/profile/edit');
-              }}
-            >
-              <span>👤</span>
-              <span>Edit Profile</span>
-            </div>
-            <div 
-              className="p-3 hover:bg-gray-50 cursor-pointer flex items-center space-x-2 text-red-500"
-              onClick={handleLogout}
-            >
-              <span>🚪</span>
-              <span>Logout</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Profile Content */}
-      <div className="mt-6 space-y-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-semibold mb-2">My Orders</h3>
-          <p className="text-gray-600 text-sm">No orders yet</p>
+        {/* Navigation Sections */}
+        <div className="p-4 space-y-2">
+          {loading ? (
+            // Loading skeletons for sections
+            Array(5).fill(0).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-lg" />
+            ))
+          ) : (
+            <>
+              {sections.map((section) => (
+                <ProfileSection
+                  key={section.label}
+                  icon={section.icon}
+                  label={section.label}
+                  onClick={section.onClick}
+                />
+              ))}
+              
+              {/* Logout Section */}
+              <ProfileSection
+                icon={LogOut}
+                label="Logout"
+                onClick={handleLogout}
+                className="text-red-600 hover:bg-red-50"
+              />
+            </>
+          )}
         </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-semibold mb-2">Saved Addresses</h3>
-          <p className="text-gray-600 text-sm">No addresses saved</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-semibold mb-2">Settings</h3>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">Notifications</p>
-            <p className="text-sm text-gray-600">Language</p>
-            <p className="text-sm text-gray-600">Theme</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Menu Items */}
-      <div className="bg-white">
-        {menuItems.map((item, index) => (
-          <div
-            key={item.label}
-            className={`flex items-center gap-4 p-4 ${
-              index !== menuItems.length - 1 ? 'border-b' : ''
-            }`}
-            onClick={() => navigate(item.link)}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </div>
-        ))}
       </div>
     </div>
   );
