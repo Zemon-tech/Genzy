@@ -12,6 +12,7 @@ import AddProduct from './pages/seller/AddProduct';
 import DashboardLayout from './components/seller/DashboardLayout';
 import { AuthProvider } from './context/AuthContext';
 import { SellerAuthProvider } from './context/SellerAuthContext';
+import SellerProducts from './components/seller/SellerProducts';
 
 function App() {
   // Check if the current path is a seller route
@@ -28,7 +29,7 @@ function App() {
               <Route path="/seller" element={<DashboardLayout />}>
                 <Route index element={<Navigate to="/seller/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="products" element={<div className="p-4">Products page coming soon...</div>} />
+                <Route path="products" element={<SellerProducts />} />
                 <Route path="add-product" element={<AddProduct />} />
                 {/* Add other seller routes here */}
               </Route>
