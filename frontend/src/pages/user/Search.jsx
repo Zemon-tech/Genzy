@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { HiSearch } from 'react-icons/hi';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
+import { Link } from 'react-router-dom';
+import ProductCard from '../../components/product/ProductCard';
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,32 +118,7 @@ const Search = () => {
             <p className="col-span-2 text-center text-gray-500 py-8">No products found</p>
           ) : (
             products.map((product) => (
-              <div key={product.id} className="rounded-lg overflow-hidden shadow-sm">
-                <div className="aspect-square relative">
-                  <img 
-                    src={product.images[0]} 
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {calculateDiscount(product.mrp, product.selling_price) > 0 && (
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      {calculateDiscount(product.mrp, product.selling_price)}% OFF
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-bold">₹{product.selling_price}</span>
-                    <span className="text-sm text-gray-500 line-through">₹{product.mrp}</span>
-                    {calculateDiscount(product.mrp, product.selling_price) > 0 && (
-                      <span className="text-green-600 text-sm">
-                        ({calculateDiscount(product.mrp, product.selling_price)}% off)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={product.id} product={product} />
             ))
           )}
         </div>

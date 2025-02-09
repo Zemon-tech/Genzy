@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
+import { Link } from 'react-router-dom';
+import ProductCard from '../../components/product/ProductCard';
+import BrandSlider from '../../components/BrandSlider';
 
 const Home = () => {
   const [gender, setGender] = useState('gente'); // gente for men, lade for women
@@ -17,37 +20,73 @@ const Home = () => {
   const brands = [
     { 
       id: 1, 
-      name: 'H&M', 
-      logo: 'https://therockbury.com/app/uploads/2014/03/HM-logo.jpg'
+      name: 'Nike', 
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Nike_Logo.svg/1200px-Nike_Logo.svg.png'
     },
     { 
       id: 2, 
-      name: 'Zara', 
-      logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjNfikC9k9eTnCa0ZLnzhHZ1AwZwMojMyagQ&s'
+      name: 'Adidas', 
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Adidas_Logo.svg/2560px-Adidas_Logo.svg.png'
     },
     { 
       id: 3, 
-      name: 'Gucci', 
-      logo: 'https://thumbs.dreamstime.com/b/gucci-logo-editorial-illustrative-white-background-eps-download-vector-jpeg-banner-gucci-logo-editorial-illustrative-white-208329393.jpg'
+      name: 'Puma', 
+      logo: 'https://logos-world.net/wp-content/uploads/2020/04/Puma-Logo.png'
     },
     { 
       id: 4, 
-      name: 'Chanel', 
-      logo: 'https://www.shutterstock.com/image-vector/chanel-icon-logo-symbol-sign-600nw-2404629953.jpg'
+      name: 'Under Armour', 
+      logo: 'https://logos-world.net/wp-content/uploads/2020/11/Under-Armour-Logo.png'
     },
+    { 
+      id: 5, 
+      name: 'New Balance', 
+      logo: 'https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Logo.png'
+    },
+    { 
+      id: 6, 
+      name: 'Reebok', 
+      logo: 'https://logos-world.net/wp-content/uploads/2020/04/Reebok-Logo.png'
+    }
   ];
 
   const categories = [
-    'Shirts',
-    'T-shirts',
-    'Co-ords',
-    'Sweatshirts',
-    'Jeans',
-    'Trousers',
-    'Dresses',
-    'Jackets',
-    'Sweaters',
-    'Activewear'
+    {
+      name: 'T-Shirts',
+      image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg'
+    },
+    {
+      name: 'Shirts',
+      image: 'https://images.pexels.com/photos/297933/pexels-photo-297933.jpeg'
+    },
+    {
+      name: 'Co-ords',
+      image: 'https://images.pexels.com/photos/2896853/pexels-photo-2896853.jpeg'
+    },
+    {
+      name: 'Sweatshirts',
+      image: 'https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg'
+    },
+    {
+      name: 'Jeans',
+      image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg'
+    },
+    {
+      name: 'Trousers',
+      image: 'https://images.pexels.com/photos/3768005/pexels-photo-3768005.jpeg'
+    },
+    {
+      name: 'Jackets',
+      image: 'https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg'
+    },
+    {
+      name: 'Sweaters',
+      image: 'https://images.pexels.com/photos/45982/pexels-photo-45982.jpeg'
+    },
+    {
+      name: 'Activewear',
+      image: 'https://images.pexels.com/photos/2294342/pexels-photo-2294342.jpeg'
+    }
   ];
 
   useEffect(() => {
@@ -70,9 +109,26 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  const ProductsSection = () => (
+    <section className="py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">New Arrivals</h2>
+        <Link to="/search" className="text-indigo-600 hover:text-indigo-700">
+          View All →
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    </section>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white min-h-screen relative">
+    <div className="min-h-screen bg-white">
+      {/* Main Content */}
+      <div className="max-w-md mx-auto bg-white min-h-screen">
         {/* Gender Toggle */}
         <div className="sticky top-0 bg-white z-20 shadow-sm">
           <div className="px-4 py-4">
@@ -101,82 +157,69 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div>
-          {/* Hero Section with Carousel */}
-          <div className="relative">
-            <ImageCarousel images={carouselImages} />
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-              <button className="bg-white/90 backdrop-blur-sm px-8 py-3 rounded-full shadow-lg font-semibold hover:bg-white transition-colors pointer-events-auto">
-                Shop Now
-              </button>
-            </div>
+        {/* Hero Section with Carousel */}
+        <div className="relative">
+          <ImageCarousel images={carouselImages} />
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+            <button className="bg-white/90 backdrop-blur-sm px-8 py-3 rounded-full shadow-lg font-semibold hover:bg-white transition-colors pointer-events-auto">
+              Shop Now
+            </button>
           </div>
+        </div>
 
-          {/* Featured Brands */}
-          <section className="p-4">
-            <h2 className="text-xl font-bold mb-4">Featured Brands</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {brands.map((brand) => (
-                <div
-                  key={brand.id}
-                  className="aspect-square bg-white rounded-lg flex items-center justify-center p-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <img 
-                    src={brand.logo} 
-                    alt={brand.name}
-                    className="w-full h-full object-contain"
+        {/* Featured Brands */}
+        <section className="py-6">
+          <h2 className="text-xl font-bold text-center mb-4">Featured Brands</h2>
+          <BrandSlider brands={brands} />
+        </section>
+
+        {/* Categories */}
+        <section className="py-6">
+          <h2 className="text-xl font-bold text-center mb-6">Shop by Category</h2>
+          <div className="grid grid-cols-3 gap-2 px-2">
+            {categories.map((category) => (
+              <Link
+                key={category.name}
+                to={`/search?category=${category.name}`}
+                className="group relative block"
+              >
+                <div className="aspect-[3/4] overflow-hidden rounded-lg">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Categories */}
-          <section className="p-4">
-            <h2 className="text-xl font-bold mb-4">Categories</h2>
-            <div className="flex overflow-x-auto gap-4 pb-2 hide-scrollbar">
-              {categories.map((category) => (
-                <div
-                  key={category}
-                  className="flex-shrink-0 px-6 py-2 bg-gray-100 rounded-full"
-                >
-                  {category}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Latest Products */}
-          <section className="p-4">
-            <h2 className="text-xl font-bold mb-4">Latest Products</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {products.map((product) => (
-                <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                  <div className="aspect-square relative">
-                    <img 
-                      src={product.images[0]} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                    {calculateDiscount(product.mrp, product.selling_price) > 0 && (
-                      <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        {calculateDiscount(product.mrp, product.selling_price)}% OFF
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-3 left-3">
+                      <h3 className="text-white text-sm font-medium tracking-wide">
+                        {category.name}
+                      </h3>
+                      <div className="flex items-center mt-1 text-white/90">
+                        <span className="text-xs font-medium">Shop Now</span>
+                        <svg
+                          className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-bold">₹{product.selling_price}</span>
-                      <span className="text-sm text-gray-500 line-through">₹{product.mrp}</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Latest Products */}
+        <ProductsSection />
       </div>
     </div>
   );

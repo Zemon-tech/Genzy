@@ -102,9 +102,16 @@ const EditProduct = () => {
 
     for (const file of files) {
       try {
+        // Sanitize filename: remove special characters and spaces
+        const timestamp = Date.now();
+        const sanitizedName = file.name
+          .replace(/[^a-zA-Z0-9.]/g, '_') // Replace special chars with underscore
+          .replace(/\s+/g, '_'); // Replace spaces with underscore
+        const fileName = `${timestamp}_${sanitizedName}`;
+
         const { data, error } = await supabase.storage
           .from('product_images')
-          .upload(`${Date.now()}-${file.name}`, file, {
+          .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false
           });
