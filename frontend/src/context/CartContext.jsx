@@ -3,18 +3,17 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-
-  // Load cart and wishlist from localStorage on mount
-  useEffect(() => {
+  const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+  
+  const [wishlist, setWishlist] = useState(() => {
     const savedWishlist = localStorage.getItem('wishlist');
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-  }, []);
+    return savedWishlist ? JSON.parse(savedWishlist) : [];
+  });
 
-  // Save cart and wishlist to localStorage whenever they change
+  // Save to localStorage whenever cart or wishlist changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
@@ -33,14 +32,16 @@ export const CartProvider = ({ children }) => {
       );
 
       if (existingItem) {
+        // If item exists, update quantity
         return prevCart.map(item =>
           item === existingItem
-            ? { ...item, quantity: item.quantity + product.quantity }
+            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
             : item
         );
       }
 
-      return [...prevCart, product];
+      // If item doesn't exist, add new item
+      return [...prevCart, { ...product, quantity: product.quantity || 1 }];
     });
   };
 
@@ -56,6 +57,8 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = (productId, size, color, newQuantity) => {
+    if (newQuantity < 1) return; // Prevent negative quantities
+    
     setCart(prevCart =>
       prevCart.map(item =>
         item.id === productId && 
@@ -69,6 +72,7 @@ export const CartProvider = ({ children }) => {
 
   const addToWishlist = (product) => {
     setWishlist(prev => {
+      // Check if product already exists in wishlist
       if (prev.some(item => item.id === product.id)) return prev;
       return [...prev, product];
     });
@@ -78,16 +82,38 @@ export const CartProvider = ({ children }) => {
     setWishlist(prev => prev.filter(item => item.id !== productId));
   };
 
-  const moveToCart = (productId, size, color) => {
-    const product = wishlist.find(item => item.id === productId);
-    if (product) {
-      addToCart({ ...product, selectedSize: size, selectedColor: color, quantity: 1 });
-      removeFromWishlist(productId);
+  const moveToCart = (productId) => {
+    const wishlistItem = wishlist.find(item => item.id === productId);
+    
+    if (!wishlistItem) return;
+
+    // Check if item already exists in cart
+    const existingCartItem = cart.find(item => 
+      item.id === productId &&
+      item.selectedSize === wishlistItem.selectedSize &&
+      item.selectedColor === wishlistItem.selectedColor
+    );
+
+    if (existingCartItem) {
+      // If item exists in cart, just update quantity
+      updateQuantity(
+        productId,
+        wishlistItem.selectedSize,
+        wishlistItem.selectedColor,
+        existingCartItem.quantity + 1
+      );
+    } else {
+      // If item doesn't exist in cart, add it
+      addToCart({ ...wishlistItem, quantity: 1 });
     }
+
+    // Remove from wishlist
+    removeFromWishlist(productId);
   };
 
   const clearCart = () => {
     setCart([]);
+    localStorage.removeItem('cart');
   };
 
   const getCartTotal = () => {
