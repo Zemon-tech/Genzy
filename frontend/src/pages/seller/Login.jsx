@@ -10,7 +10,7 @@ const SAMPLE_CREDS = {
 
 const SellerLogin = () => {
   const navigate = useNavigate();
-  const { login, signup } = useSellerAuth();
+  const { handleLogin, signup } = useSellerAuth();
   const [isSignup, setIsSignup] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -51,8 +51,12 @@ const SellerLogin = () => {
           phone_number: ''
         });
       } else {
-        await login(formData.email, formData.password);
-        navigate('/seller/dashboard');
+        const result = await handleLogin(formData.email, formData.password);
+        if (result.success) {
+          navigate('/seller/dashboard');
+        } else {
+          setError(result.error || 'Login failed');
+        }
       }
     } catch (err) {
       setError(err.message);

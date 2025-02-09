@@ -28,25 +28,38 @@ export const SellerAuthProvider = ({ children }) => {
 
   const handleLogin = async (email, password) => {
     try {
+      // First authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError) throw authError;
+
+      // Then get seller data using business_email
       const { data, error } = await supabase
         .from('sellers')
         .select('*')
-        .eq('email', email)
+        .eq('business_email', email) // Changed from email to business_email
         .single();
 
       if (error) throw error;
 
       // Make sure brand_name is included in the seller data
-      localStorage.setItem('sellerAuth', JSON.stringify({
+      const sellerData = {
         ...data,
-        brand_name: data.brand_name // Ensure this field exists
-      }));
+        session: authData.session // Include the session data
+      };
 
-      setSeller(data);
+      localStorage.setItem('sellerAuth', JSON.stringify(sellerData));
+      setSeller(sellerData);
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || 'Login failed. Please check your credentials.'
+      };
     }
   };
 
