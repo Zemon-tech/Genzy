@@ -101,17 +101,13 @@ const AddProduct = () => {
       setLoading(true);
       setError('');
       
-      // Debug authentication state
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       console.log('Current session:', session);
-      console.log('Session error:', sessionError);
-      console.log('Seller state:', seller);
-
+      
       if (!session) {
         throw new Error('No active session found');
       }
 
-      // Check if seller is authenticated
       if (!seller || !seller.id) {
         throw new Error('You must be logged in to upload images');
       }
@@ -119,16 +115,19 @@ const AddProduct = () => {
       const uploadedUrls = [];
 
       for (const file of files) {
-        // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
           throw new Error('Each file must be less than 5MB');
         }
 
-        // Create a unique file name
-        const timestamp = new Date().getTime();
-        const randomString = Math.random().toString(36).substring(2, 15);
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `${timestamp}-${randomString}.${fileExtension}`;
+        // Enhanced unique file name generation
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 15) + 
+                           Math.random().toString(36).substring(2, 15);
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        
+        // Add a unique identifier based on file content
+        const uniqueIdentifier = await generateUniqueIdentifier(file);
+        const fileName = `${timestamp}-${randomString}-${uniqueIdentifier}.${fileExtension}`;
         
         // Create the file path with seller ID and timestamp
         const filePath = `${seller.id}/${fileName}`;
@@ -140,12 +139,12 @@ const AddProduct = () => {
           sellerId: seller.id
         });
 
-        // Upload the file with explicit headers
+        // Upload with upsert: true to overwrite if file exists
         const { error: uploadError, data } = await supabase.storage
           .from('product_images')
           .upload(filePath, file, {
             cacheControl: '3600',
-            upsert: false,
+            upsert: true, // Changed to true to overwrite existing files
             contentType: file.type
           });
 
@@ -167,11 +166,19 @@ const AddProduct = () => {
     } catch (err) {
       console.error('Error details:', err);
       setError(err.message || 'Error uploading images');
-      // Clear previews on error
       setPreviewImages([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to generate a unique identifier based on file content
+  const generateUniqueIdentifier = async (file) => {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.slice(0, 8); // Take first 8 characters of hash
   };
 
   const handleSubmit = async (e) => {
