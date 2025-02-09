@@ -19,9 +19,9 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 flex">
+    <div className="min-h-screen h-screen w-full bg-gray-100 flex overflow-hidden">
       {/* Sidebar - hidden on mobile, shown on desktop */}
-      <div className="hidden md:block">
+      <div className="hidden md:block h-full">
         <Sidebar />
       </div>
 
@@ -41,10 +41,8 @@ const DashboardLayout = () => {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-8 overflow-auto">
-        <div className="max-w-7xl mx-auto">
-          <Outlet />
-        </div>
+      <main className="flex-1 overflow-auto">
+        <Outlet />
       </main>
     </div>
   );

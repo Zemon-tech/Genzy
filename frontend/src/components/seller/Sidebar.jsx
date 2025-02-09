@@ -15,11 +15,11 @@ const Sidebar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="bg-gray-800 text-white w-64 min-h-screen flex-shrink-0">
+    <div className="bg-gray-800 text-white w-64 h-full flex flex-col">
       <div className="p-4">
         <h2 className="text-2xl font-bold">Seller Dashboard</h2>
       </div>
-      <nav className="mt-8">
+      <nav className="flex-1 overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.path}
@@ -34,6 +34,8 @@ const Sidebar = () => {
             {item.label}
           </Link>
         ))}
+      </nav>
+      <div className="border-t border-gray-700">
         <button
           onClick={() => {
             localStorage.removeItem('sellerAuth');
@@ -44,7 +46,7 @@ const Sidebar = () => {
           <span className="mr-3">🚪</span>
           Logout
         </button>
-      </nav>
+      </div>
     </div>
   );
 };
