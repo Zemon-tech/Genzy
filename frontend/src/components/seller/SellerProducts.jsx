@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import supabase from '../../config/supabase';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 import { Skeleton } from '../ui/skeleton';
+import { calculateDiscount } from '../../utils/helpers';
 
 const SellerProducts = () => {
   const [products, setProducts] = useState([]);
@@ -42,6 +43,30 @@ const SellerProducts = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+        
+      if (error) throw error;
+      
+      // Remove product from local state
+      setProducts(products.filter(p => p.id !== productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product');
+    }
+  };
+
+  const handleEdit = (productId) => {
+    // Navigate to edit page
+    window.location.href = `/seller/edit-product/${productId}`;
+  };
+
   const ProductSkeleton = () => (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <Skeleton className="w-full h-48" />
@@ -81,7 +106,13 @@ const SellerProducts = () => {
           ) : (
             // Show actual products when loaded
             filteredProducts.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden relative">
+                {/* Discount Badge */}
+                {calculateDiscount(product.mrp, product.selling_price) > 0 && (
+                  <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                    {calculateDiscount(product.mrp, product.selling_price)}% OFF
+                  </div>
+                )}
                 <img
                   src={product.images[0]}
                   alt={product.name}
@@ -90,9 +121,33 @@ const SellerProducts = () => {
                 <div className="p-4">
                   <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
                   <div className="flex justify-between items-center">
-                    <p className="text-green-600 font-bold">₹{product.selling_price}</p>
-                    <p className="text-gray-600">Stock: {product.stock_quantity}</p>
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-bold">₹{product.selling_price}</span>
+                        <span className="text-sm text-gray-500 line-through">₹{product.mrp}</span>
+                        {calculateDiscount(product.mrp, product.selling_price) > 0 && (
+                          <span className="text-green-600 text-sm">
+                            ({calculateDiscount(product.mrp, product.selling_price)}% off)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleEdit(product.id)}
+                        className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(product.id)}
+                        className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
+                  <p className="text-gray-600 mt-2">Stock: {product.stock_quantity}</p>
                 </div>
               </div>
             ))

@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSellerAuth } from '../../context/SellerAuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
+  const { seller } = useSellerAuth();
   
+  useEffect(() => {
+    console.log('Current seller:', seller); // Debug log
+  }, [seller]);
+
   const menuItems = [
     { path: '/seller/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/seller/products', label: 'Products', icon: '📦' },
@@ -17,7 +24,8 @@ const Sidebar = () => {
   return (
     <div className="bg-gray-800 text-white w-64 h-full flex flex-col">
       <div className="p-4">
-        <h2 className="text-2xl font-bold">Seller Dashboard</h2>
+        <h2 className="text-2xl font-bold">{seller?.brand_name || 'Loading...'}</h2>
+        <p className="text-sm text-gray-400 mt-1">Seller Dashboard</p>
       </div>
       <nav className="flex-1 overflow-y-auto">
         {menuItems.map((item) => (

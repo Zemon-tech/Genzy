@@ -26,41 +26,27 @@ export const SellerAuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const handleLogin = async (email, password) => {
     try {
-      // First, authenticate with Supabase
-      const { data: supabaseData, error: supabaseError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data, error } = await supabase
+        .from('sellers')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-      if (supabaseError) throw supabaseError;
+      if (error) throw error;
 
-      // Then authenticate with your backend
-      const response = await fetch(`${API_URL}/seller/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // Make sure brand_name is included in the seller data
+      localStorage.setItem('sellerAuth', JSON.stringify({
+        ...data,
+        brand_name: data.brand_name // Ensure this field exists
+      }));
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const sellerData = {
-        ...data.data.user,
-        session: supabaseData.session, // Use Supabase session
-      };
-
-      setSeller(sellerData);
-      localStorage.setItem('sellerAuth', JSON.stringify(sellerData));
-      return sellerData;
+      setSeller(data);
+      return { success: true };
     } catch (error) {
-      throw error;
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -97,7 +83,7 @@ export const SellerAuthProvider = ({ children }) => {
   }
 
   return (
-    <SellerAuthContext.Provider value={{ seller, login, logout, signup }}>
+    <SellerAuthContext.Provider value={{ seller, handleLogin, logout, signup }}>
       {children}
     </SellerAuthContext.Provider>
   );

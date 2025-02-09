@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
+import supabase from '../../config/supabase';
+import { calculateDiscount } from '../../utils/helpers';
 
 const Home = () => {
   const [gender, setGender] = useState('gente'); // gente for men, lade for women
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const carouselImages = [
     'https://images.unsplash.com/photo-1738705466275-1f94be26c5bd?q=80&w=1888&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -39,8 +43,32 @@ const Home = () => {
     'Co-ords',
     'Sweatshirts',
     'Jeans',
+    'Trousers',
+    'Dresses',
     'Jackets',
+    'Sweaters',
+    'Activewear'
   ];
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .limit(6); // Fetch latest 6 products
+          
+        if (error) throw error;
+        setProducts(data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,6 +142,36 @@ const Home = () => {
                   className="flex-shrink-0 px-6 py-2 bg-gray-100 rounded-full"
                 >
                   {category}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Latest Products */}
+          <section className="p-4">
+            <h2 className="text-xl font-bold mb-4">Latest Products</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {products.map((product) => (
+                <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="aspect-square relative">
+                    <img 
+                      src={product.images[0]} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {calculateDiscount(product.mrp, product.selling_price) > 0 && (
+                      <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                        {calculateDiscount(product.mrp, product.selling_price)}% OFF
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-bold">₹{product.selling_price}</span>
+                      <span className="text-sm text-gray-500 line-through">₹{product.mrp}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

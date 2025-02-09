@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 import supabase from '../../config/supabase';
+import { calculateDiscount } from '../../utils/helpers';
 
 const CATEGORIES = [
   'T-Shirts',
@@ -10,6 +11,8 @@ const CATEGORIES = [
   'Dresses',
   'Jackets',
   'Sweaters',
+  'Co-ords',
+  'Sweatshirts',
   'Activewear',
 ];
 
@@ -88,97 +91,34 @@ const AddProduct = () => {
 
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 5) {
-      setError('Maximum 5 images allowed');
-      return;
-    }
+    const newImages = [];
+    const newPreviewImages = [];
 
-    // Create preview URLs
-    const previews = files.map(file => URL.createObjectURL(file));
-    setPreviewImages(previews);
-
-    try {
-      setLoading(true);
-      setError('');
-      
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      
-      if (!session) {
-        throw new Error('No active session found');
-      }
-
-      if (!seller || !seller.id) {
-        throw new Error('You must be logged in to upload images');
-      }
-
-      const uploadedUrls = [];
-
-      for (const file of files) {
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error('Each file must be less than 5MB');
-        }
-
-        // Enhanced unique file name generation
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(2, 15) + 
-                           Math.random().toString(36).substring(2, 15);
-        const fileExtension = file.name.split('.').pop().toLowerCase();
-        
-        // Add a unique identifier based on file content
-        const uniqueIdentifier = await generateUniqueIdentifier(file);
-        const fileName = `${timestamp}-${randomString}-${uniqueIdentifier}.${fileExtension}`;
-        
-        // Create the file path with seller ID and timestamp
-        const filePath = `${seller.id}/${fileName}`;
-
-        console.log('Attempting to upload file:', {
-          filePath,
-          fileSize: file.size,
-          fileType: file.type,
-          sellerId: seller.id
-        });
-
-        // Upload with upsert: true to overwrite if file exists
-        const { error: uploadError, data } = await supabase.storage
+    for (const file of files) {
+      try {
+        const { data, error } = await supabase.storage
           .from('product_images')
-          .upload(filePath, file, {
+          .upload(`${Date.now()}-${file.name}`, file, {
             cacheControl: '3600',
-            upsert: true, // Changed to true to overwrite existing files
-            contentType: file.type
+            upsert: false
           });
 
-        if (uploadError) {
-          console.error('Upload error details:', uploadError);
-          throw new Error(uploadError.message || 'Error uploading image');
-        }
+        if (error) throw error;
 
-        // Get the public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('product_images')
-          .getPublicUrl(filePath);
-
-        uploadedUrls.push(publicUrl);
+        const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product_images/${data.path}`;
+        newImages.push(imageUrl);
+        newPreviewImages.push(URL.createObjectURL(file));
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        setError('Error uploading image. Please try again.');
       }
-
-      setFormData({ ...formData, images: uploadedUrls });
-      setSuccess('Images uploaded successfully');
-    } catch (err) {
-      console.error('Error details:', err);
-      setError(err.message || 'Error uploading images');
-      setPreviewImages([]);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  // Helper function to generate a unique identifier based on file content
-  const generateUniqueIdentifier = async (file) => {
-    const buffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex.slice(0, 8); // Take first 8 characters of hash
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...newImages]
+    }));
+    setPreviewImages(prev => [...prev, ...newPreviewImages]);
   };
 
   const handleSubmit = async (e) => {
@@ -248,7 +188,7 @@ const AddProduct = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {/* Basic Details */}
             <div className="bg-white p-6 rounded-lg shadow">
@@ -494,8 +434,54 @@ const AddProduct = () => {
             </div>
           </form>
 
-          {/* Image Preview Section */}
+          {/* Right Column - Preview and Images */}
           <div className="lg:col-span-1">
+            {/* Product Preview */}
+            <div className="bg-white p-6 rounded-lg shadow mb-6">
+              <h2 className="text-xl font-semibold mb-4">Product Preview</h2>
+              <div className="border rounded-lg p-4">
+                <div className="aspect-square w-full max-w-[200px] mb-4 overflow-hidden rounded-lg">
+                  {previewImages.length > 0 ? (
+                    <img
+                      src={previewImages[0]}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                      <span className="text-gray-400">No image</span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">{formData.name || 'Product Name'}</h3>
+                  <p className="text-sm text-gray-600">{formData.description || 'Product Description'}</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold">₹{formData.selling_price || '0'}</span>
+                    <span className="text-gray-500 line-through">₹{formData.mrp || '0'}</span>
+                    {calculateDiscount(formData.mrp, formData.selling_price) > 0 && (
+                      <span className="text-green-600 text-sm">
+                        ({calculateDiscount(formData.mrp, formData.selling_price)}% off)
+                      </span>
+                    )}
+                  </div>
+                  {formData.sizes.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Sizes: </span>
+                      {formData.sizes.join(', ')}
+                    </div>
+                  )}
+                  {formData.colors.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Colors: </span>
+                      {formData.colors.join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Image Upload Section */}
             <div className="bg-white p-6 rounded-lg shadow sticky top-8">
               <h2 className="text-xl font-semibold mb-4">Product Images</h2>
               <div className="space-y-4">
