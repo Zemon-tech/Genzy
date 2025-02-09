@@ -16,6 +16,7 @@ import SellerProducts from './components/seller/SellerProducts';
 import EditProduct from './pages/seller/EditProduct';
 import { CartProvider } from './context/CartContext';
 import ProductPage from './pages/user/ProductPage';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   // Check if the current path is a seller route
@@ -26,6 +27,7 @@ function App() {
       <CartProvider>
         <SellerAuthProvider>
           <Router>
+            <Toaster />
             {isSellerRoute ? (
               // Seller Routes with full-width layout
               <Routes>

@@ -21,7 +21,7 @@ const Home = () => {
     { 
       id: 1, 
       name: 'Nike', 
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Nike_Logo.svg/1200px-Nike_Logo.svg.png'
+      logo: 'https://pngimg.com/uploads/nike/nike_PNG11.png'
     },
     { 
       id: 2, 
@@ -36,7 +36,7 @@ const Home = () => {
     { 
       id: 4, 
       name: 'Under Armour', 
-      logo: 'https://logos-world.net/wp-content/uploads/2020/11/Under-Armour-Logo.png'
+      logo: 'https://download.logo.wine/logo/Under_Armour/Under_Armour-Logo.wine.png'
     },
     { 
       id: 5, 

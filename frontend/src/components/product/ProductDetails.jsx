@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { calculateDiscount } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import toast from 'react-hot-toast';
 
 const ProductDetails = ({
   product,
@@ -18,6 +19,10 @@ const ProductDetails = ({
     wishlist.some(item => item.id === product.id)
   );
 
+  if (!product) {
+    return <div>Loading...</div>;
+  }
+
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
       alert('Please select size and color');
@@ -28,6 +33,16 @@ const ProductDetails = ({
       selectedSize,
       selectedColor,
       quantity
+    });
+    toast.success('Added to Cart', {
+      position: 'top-center',
+      duration: 2000,
+      style: {
+        background: '#333',
+        color: '#fff',
+        borderRadius: '10px',
+        padding: '16px'
+      }
     });
   };
 
@@ -45,7 +60,7 @@ const ProductDetails = ({
       {/* Brand & Title */}
       <div>
         <h2 className="text-sm text-gray-500 uppercase tracking-wider">
-          {product.sellers.brand_name}
+          {product.sellers?.brand_name || 'Brand'}
         </h2>
         <h1 className="text-2xl font-bold text-gray-900 mt-1">
           {product.name}
