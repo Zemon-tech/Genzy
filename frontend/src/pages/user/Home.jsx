@@ -160,11 +160,6 @@ const Home = () => {
         {/* Hero Section with Carousel */}
         <div className="relative">
           <ImageCarousel images={carouselImages} />
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-            <button className="bg-white/90 backdrop-blur-sm px-8 py-3 rounded-full shadow-lg font-semibold hover:bg-white transition-colors pointer-events-auto">
-              Shop Now
-            </button>
-          </div>
         </div>
 
         {/* Featured Brands */}

@@ -19,7 +19,7 @@ const BottomNav = () => {
         
         <Link to="/search" className={`flex flex-col items-center ${isActive('/search') ? 'text-blue-600' : 'text-gray-600'}`}>
           <Search className="w-6 h-6" />
-          <span className="text-xs mt-1">Search</span>
+          <span className="text-xs mt-1">Explore</span>
         </Link>
         
         <Link to="/cart" className={`flex flex-col items-center ${isActive('/cart') ? 'text-blue-600' : 'text-gray-600'}`}>

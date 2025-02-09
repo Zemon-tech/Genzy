@@ -25,7 +25,16 @@ const ProductDetails = ({
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
-      alert('Please select size and color');
+      toast.error('Please select size and color', {
+        position: 'top-center',
+        duration: 2000,
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '16px'
+        }
+      });
       return;
     }
     addToCart({
