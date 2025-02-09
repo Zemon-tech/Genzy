@@ -3,6 +3,7 @@ import supabase from '../../config/supabase';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 import { Skeleton } from '../ui/skeleton';
 import { calculateDiscount } from '../../utils/helpers';
+import { deleteImageFromStorage } from '../../utils/storage';
 
 const SellerProducts = () => {
   const [products, setProducts] = useState([]);
@@ -47,17 +48,64 @@ const SellerProducts = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      const { error } = await supabase
+      console.log('Starting deletion process for product:', productId);
+      
+      // First get the product to access its images
+      const { data: product, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching product:', fetchError);
+        throw fetchError;
+      }
+
+      console.log('Product data:', product);
+      console.log('Product images:', product.images);
+
+      // Delete images from storage
+      if (product.images && product.images.length > 0) {
+        console.log('Starting image deletion process...');
+        const deleteResults = await Promise.all(
+          product.images.map(async imageUrl => {
+            console.log('Processing image URL:', imageUrl);
+            const result = await deleteImageFromStorage(imageUrl);
+            console.log('Delete result for image:', result);
+            return result;
+          })
+        );
+
+        // Log results
+        deleteResults.forEach((result, index) => {
+          if (!result.success) {
+            console.error(`Failed to delete image ${index + 1}:`, result.error);
+          } else {
+            console.log(`Successfully deleted image ${index + 1}`);
+          }
+        });
+      }
+
+      console.log('Deleting product from database...');
+      // Delete the product from database
+      const { error: deleteError } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
         
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Error deleting product from database:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Successfully deleted product from database');
       
       // Remove product from local state
       setProducts(products.filter(p => p.id !== productId));
+      
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error in handleDelete:', error);
       alert('Failed to delete product');
     }
   };
