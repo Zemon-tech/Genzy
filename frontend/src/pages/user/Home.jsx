@@ -2,19 +2,92 @@ import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 import BrandSlider from '../../components/BrandSlider';
+import { HiSearch } from 'react-icons/hi';
 
 const Home = () => {
-  const [gender, setGender] = useState('gente'); // gente for men, lade for women
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   
-  const carouselImages = [
-    'https://images.unsplash.com/photo-1738705466275-1f94be26c5bd?q=80&w=1888&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    'https://images.unsplash.com/photo-1721394744734-e367c1c40892?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    'https://images.unsplash.com/photo-1721902022374-e1f35db380dd?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  const carouselSlides = [
+    {
+      image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070',
+      content: (
+        <>
+          <h1 className="text-4xl font-bold mb-3">New Season Arrivals</h1>
+          <p className="text-lg mb-6 opacity-90">Discover the latest trends in fashion</p>
+          <Link 
+            to="/search" 
+            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+          >
+            Shop Now
+          </Link>
+        </>
+      )
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071',
+      content: (
+        <>
+          <h1 className="text-4xl font-bold mb-3">Summer Collection 2024</h1>
+          <p className="text-lg mb-6 opacity-90">Beat the heat with our cool collection</p>
+          <Link 
+            to="/search?category=summer" 
+            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+          >
+            Explore Summer
+          </Link>
+        </>
+      )
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070',
+      content: (
+        <>
+          <h1 className="text-4xl font-bold mb-3">Exclusive Brands</h1>
+          <p className="text-lg mb-6 opacity-90">Shop your favorite designer brands</p>
+          <Link 
+            to="/search?type=premium" 
+            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+          >
+            View Brands
+          </Link>
+        </>
+      )
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=2070',
+      content: (
+        <>
+          <h1 className="text-4xl font-bold mb-3">Trending Now</h1>
+          <p className="text-lg mb-6 opacity-90">Stay ahead with the latest fashion trends</p>
+          <Link 
+            to="/search?sort=trending" 
+            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+          >
+            Shop Trending
+          </Link>
+        </>
+      )
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1445108771704-4d82e8e60a8b?q=80&w=2070',
+      content: (
+        <>
+          <h1 className="text-4xl font-bold mb-3">Special Offers</h1>
+          <p className="text-lg mb-6 opacity-90">Up to 50% off on selected items</p>
+          <Link 
+            to="/search?discount=true" 
+            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+          >
+            View Offers
+          </Link>
+        </>
+      )
+    }
   ];
 
   const brands = [
@@ -109,8 +182,8 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  const ProductsSection = () => (
-    <section className="py-8">
+  const ProductsSection = React.memo(() => (
+    <section className="py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">New Arrivals</h2>
         <Link to="/search" className="text-indigo-600 hover:text-indigo-700">
@@ -123,88 +196,84 @@ const Home = () => {
         ))}
       </div>
     </section>
-  );
+  ));
+
+  const MemoizedBrandSlider = React.memo(BrandSlider);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white hardware-accelerated">
       {/* Main Content */}
-      <div className="max-w-md mx-auto bg-white min-h-screen">
-        {/* Gender Toggle */}
-        <div className="sticky top-0 bg-white z-20 shadow-sm">
-          <div className="px-4 py-4">
-            <div className="flex gap-4">
-              <button
-                onClick={() => setGender('gente')}
-                className={`flex-1 px-6 py-2 rounded-full transition-colors ${
-                  gender === 'gente'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Gente
-              </button>
-              <button
-                onClick={() => setGender('lade')}
-                className={`flex-1 px-6 py-2 rounded-full transition-colors ${
-                  gender === 'lade'
-                    ? 'bg-pink-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Lade
-              </button>
+      <div className="max-w-[480px] mx-auto bg-white min-h-screen hardware-accelerated">
+        {/* Enhanced Hero Section */}
+        <div className="relative">
+          {/* Search Bar Overlay */}
+          <div className="absolute top-4 left-0 right-0 z-10 px-4">
+            <div 
+              onClick={() => navigate('/search')} 
+              className="relative cursor-pointer"
+            >
+              <input
+                type="text"
+                placeholder="Search for products..."
+                className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-full text-white placeholder-white/70 focus:outline-none"
+                readOnly
+              />
+              <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-5 h-5" />
             </div>
+          </div>
+
+          {/* Carousel Section */}
+          <div className="h-[85vh]">
+            <ImageCarousel 
+              images={carouselSlides.map(slide => slide.image)}
+              slides={carouselSlides.map(slide => slide.content)}
+              autoPlayInterval={5000}
+            />
           </div>
         </div>
 
-        {/* Hero Section with Carousel */}
-        <div className="relative">
-          <ImageCarousel images={carouselImages} />
-        </div>
-
         {/* Featured Brands */}
-        <section className="py-6">
+        <section className="py-6 px-4">
           <h2 className="text-xl font-bold text-center mb-4">Featured Brands</h2>
-          <BrandSlider brands={brands} />
+          <MemoizedBrandSlider brands={brands} />
         </section>
 
         {/* Categories */}
         <section className="py-6">
-          <h2 className="text-xl font-bold text-center mb-6">Shop by Category</h2>
-          <div className="grid grid-cols-3 gap-2 px-2">
+          <h2 className="text-xl font-bold text-center mb-4">Shop by Category</h2>
+          <div className="grid grid-cols-3 gap-1 px-1">
             {categories.map((category) => (
               <Link
                 key={category.name}
                 to={`/search?category=${category.name}`}
                 className="group relative block"
               >
-                <div className="aspect-[3/4] overflow-hidden rounded-lg">
+                <div className="aspect-[3/4] overflow-hidden">
                   <img
                     src={category.image}
                     alt={category.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                    className="w-full h-full object-cover brightness-[0.85] group-hover:brightness-75 transition-all duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute bottom-3 left-3">
-                      <h3 className="text-white text-sm font-medium tracking-wide">
-                        {category.name}
-                      </h3>
-                      <div className="flex items-center mt-1 text-white/90">
-                        <span className="text-xs font-medium">Shop Now</span>
-                        <svg
-                          className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
+                  <div className="absolute inset-0 flex flex-col justify-end p-2">
+                    <h3 className="text-white text-sm font-medium">
+                      {category.name}
+                    </h3>
+                    <div className="flex items-center mt-0.5 text-white/90">
+                      <span className="text-[10px] font-medium">Shop Now</span>
+                      <svg
+                        className="w-3 h-3 ml-0.5 transform group-hover:translate-x-1 transition-transform"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </div>

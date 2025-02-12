@@ -44,8 +44,8 @@ function App() {
             ) : (
               // User Routes with mobile layout
               <div className="min-h-screen bg-gray-50">
-                <div className="max-w-md mx-auto bg-white min-h-screen relative">
-                  <div className="px-4 pb-24">
+                <div className="max-w-[480px] mx-auto bg-white min-h-screen relative">
+                  <div className="pb-24">
                     <Routes>
                       <Route path="/" element={<Home />} />
                       <Route path="/search" element={<Search />} />
@@ -56,7 +56,7 @@ function App() {
                     </Routes>
                   </div>
                   <div className="fixed bottom-0 left-0 right-0">
-                    <div className="max-w-md mx-auto">
+                    <div className="max-w-[480px] mx-auto">
                       <BottomNav />
                     </div>
                   </div>

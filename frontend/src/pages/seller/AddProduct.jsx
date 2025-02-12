@@ -67,6 +67,7 @@ const AddProduct = () => {
     estimated_delivery: '',
     return_policy: '',
     images: [],
+    gender: 'unisex',
   });
 
   const [previewImages, setPreviewImages] = useState([]);
@@ -167,6 +168,7 @@ const AddProduct = () => {
         estimated_delivery: '',
         return_policy: '',
         images: [],
+        gender: 'unisex',
       });
       setPreviewImages([]);
     } catch (err) {
@@ -364,6 +366,22 @@ const AddProduct = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Gender
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  >
+                    <option value="unisex">Unisex</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
                 </div>
               </div>
             </div>
