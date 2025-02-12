@@ -1,4 +1,5 @@
 const supabase = require('../../config/supabase');
+const { generateTokens, setTokenCookies, clearTokenCookies } = require('../../middleware/authMiddleware');
 
 exports.signup = async (req, res) => {
     try {
@@ -32,6 +33,10 @@ exports.signup = async (req, res) => {
 
         if (profileError) throw profileError;
 
+        // Generate tokens and set cookies
+        const tokens = generateTokens(authData.user);
+        setTokenCookies(res, tokens);
+
         res.status(201).json({
             success: true,
             message: 'User created successfully',
@@ -39,8 +44,7 @@ exports.signup = async (req, res) => {
                 user: {
                     ...authData.user,
                     profile: profileData
-                },
-                session: authData.session
+                }
             }
         });
 
@@ -75,6 +79,10 @@ exports.login = async (req, res) => {
             throw profileError;
         }
 
+        // Generate tokens and set cookies
+        const tokens = generateTokens(data.user);
+        setTokenCookies(res, tokens);
+
         res.status(200).json({
             success: true,
             message: 'Login successful',
@@ -82,14 +90,67 @@ exports.login = async (req, res) => {
                 user: {
                     ...data.user,
                     profile: profileData || null
-                },
-                session: data.session
+                }
             }
         });
 
     } catch (error) {
         console.error('Login error:', error);
         res.status(401).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+exports.logout = async (req, res) => {
+    try {
+        await supabase.auth.signOut();
+        clearTokenCookies(res);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get current user session
+exports.getSession = async (req, res) => {
+    try {
+        // The user object is attached by the verifyToken middleware
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'No active session'
+            });
+        }
+
+        const { data: profileData } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', req.user.userId)
+            .single();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                user: {
+                    id: req.user.userId,
+                    email: req.user.email,
+                    profile: profileData || null
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get session error:', error);
+        res.status(500).json({
             success: false,
             message: error.message
         });

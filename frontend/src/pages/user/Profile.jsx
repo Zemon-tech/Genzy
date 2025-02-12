@@ -34,11 +34,11 @@ const Profile = () => {
         console.log('Current user ID:', user.id);
 
         // First try to fetch the existing profile
-        let { data: profile, error: fetchError } = await supabase
+        const { data: profile, error: fetchError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
           console.error('Error fetching profile:', fetchError);
@@ -47,18 +47,21 @@ const Profile = () => {
         }
 
         if (!profile) {
+          // Profile doesn't exist, create one
           console.log('Creating new profile for user:', user.id);
           
           const { data: newProfile, error: insertError } = await supabase
             .from('user_profiles')
-            .insert({
+            .insert([{
               id: user.id,
               full_name: user.user_metadata?.full_name || '',
               phone_number: user.phone || '',
-              address: ''
-            })
-            .select()
-            .single();
+              address: '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }])
+            .select('*')
+            .maybeSingle();
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
@@ -66,10 +69,10 @@ const Profile = () => {
             return;
           }
 
-          profile = newProfile;
+          setUserProfile(newProfile);
+        } else {
+          setUserProfile(profile);
         }
-
-        setUserProfile(profile);
       } catch (err) {
         console.error('Error in profile operation:', err);
         setError('An unexpected error occurred. Please try again later.');
