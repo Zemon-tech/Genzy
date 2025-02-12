@@ -54,7 +54,6 @@ const Profile = () => {
             .insert({
               id: user.id,
               full_name: user.user_metadata?.full_name || '',
-              email: user.email,
               phone_number: user.phone || '',
               address: ''
             })

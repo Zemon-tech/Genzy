@@ -17,95 +17,99 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on component mount
-    const loggedInUser = localStorage.getItem('userAuth');
-    if (loggedInUser) {
-      const userData = JSON.parse(loggedInUser);
-      setUser(userData);
-      // Restore Supabase session
-      if (userData.session?.access_token) {
-        supabase.auth.setSession({
-          access_token: userData.session.access_token,
-          refresh_token: userData.session.refresh_token
-        });
+    // Clear any existing sessions on mount
+    const clearExistingSessions = async () => {
+      try {
+        await supabase.auth.signOut();
+        localStorage.clear(); // Clear all localStorage data
+        setUser(null);
+      } catch (error) {
+        console.error('Error clearing session:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    clearExistingSessions();
+
+    // Only listen for sign-in events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const login = async (email, password) => {
-    const response = await fetch(`${API_URL}/user/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      // Clear any existing data first
+      await supabase.auth.signOut();
+      localStorage.clear();
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
-    }
-
-    const userData = {
-      ...data.data.user,
-      session: data.data.session,
-    };
-
-    // Set the Supabase session
-    if (userData.session?.access_token) {
-      await supabase.auth.setSession({
-        access_token: userData.session.access_token,
-        refresh_token: userData.session.refresh_token
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-    }
 
-    setUser(userData);
-    localStorage.setItem('userAuth', JSON.stringify(userData));
-    return userData;
+      if (error) throw error;
+
+      if (data?.user) {
+        setUser(data.user);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Login error:', error.message);
+      throw error;
+    }
   };
 
   const signup = async (email, password, full_name) => {
-    const response = await fetch(`${API_URL}/user/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, full_name }),
-    });
+    try {
+      // Clear any existing data first
+      await supabase.auth.signOut();
+      localStorage.clear();
 
-    const data = await response.json();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name }
+        }
+      });
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Signup failed');
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Signup error:', error.message);
+      throw error;
     }
-
-    return data;
   };
 
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      localStorage.clear();
       setUser(null);
-      localStorage.removeItem('userAuth');
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Logout error:', error.message);
+      throw error;
     }
   };
 
-  if (loading) {
-    return null; // or a loading spinner
-  }
-
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup }}>
-      {children}
+    <AuthContext.Provider value={{ user, login, logout, signup, loading }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
 
-// Add PropTypes validation
 AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
 };

@@ -5,12 +5,11 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1N
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-  storage: {
-    storageKey: 'storage-key',
-  },
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    flowType: 'pkce'
+  }
 });
 
 // Helper function to generate a unique file name
