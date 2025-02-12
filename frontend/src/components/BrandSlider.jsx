@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const BrandSlider = ({ brands }) => {
   const [position, setPosition] = useState(0);
@@ -10,71 +10,58 @@ const BrandSlider = ({ brands }) => {
 
     const scrollWidth = container.scrollWidth;
     const viewWidth = container.offsetWidth;
-    const totalBrands = brands.length;
-    const brandWidth = viewWidth / 3; // Show 3 brands at a time on mobile
-    const maxScroll = totalBrands * brandWidth;
+    const maxScroll = scrollWidth - viewWidth;
 
     const scroll = () => {
       setPosition((prev) => {
-        const next = prev + 1;
+        const next = prev + 0.5;
         return next >= maxScroll ? 0 : next;
       });
     };
 
-    const interval = setInterval(scroll, 30);
+    const interval = setInterval(scroll, 16);
     return () => clearInterval(interval);
   }, [brands.length]);
 
   return (
-    <div className="relative overflow-hidden bg-white py-4">
-      <div className="max-w-screen-md mx-auto px-2">
+    <div className="w-full overflow-hidden">
+      <div 
+        ref={containerRef}
+        className="flex overflow-hidden whitespace-nowrap"
+      >
         <div 
-          ref={containerRef}
-          className="relative"
+          className="flex gap-6 px-3 transition-transform duration-300 ease-linear"
+          style={{ 
+            transform: `translateX(-${position}px)`,
+            willChange: 'transform'
+          }}
         >
-          <div 
-            className="flex transition-transform duration-300 ease-linear"
-            style={{ 
-              transform: `translateX(-${position}px)`,
-            }}
-          >
-            {/* Original brands */}
-            {brands.map((brand) => (
-              <div
-                key={brand.id}
-                className="flex-shrink-0 w-1/3 px-2" // Reduced padding
-              >
-                <div className="aspect-[3/2] flex items-center justify-center bg-white rounded-lg p-3">
-                  <img 
-                    src={brand.logo} 
-                    alt={brand.name}
-                    className="max-w-full max-h-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
-                  />
-                </div>
-              </div>
-            ))}
-            {/* Duplicate brands for seamless loop */}
-            {brands.map((brand) => (
-              <div
-                key={`${brand.id}-dup`}
-                className="flex-shrink-0 w-1/3 px-2" // Reduced padding
-              >
-                <div className="aspect-[3/2] flex items-center justify-center bg-white rounded-lg p-3">
-                  <img 
-                    src={brand.logo} 
-                    alt={brand.name}
-                    className="max-w-full max-h-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          {brands.map((brand) => (
+            <div
+              key={brand.id}
+              className="flex-shrink-0 w-20"
+            >
+              <img
+                src={brand.logo}
+                alt={brand.name}
+                className="w-full h-7 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+            </div>
+          ))}
+          {brands.map((brand) => (
+            <div
+              key={`${brand.id}-dup`}
+              className="flex-shrink-0 w-20"
+            >
+              <img
+                src={brand.logo}
+                alt={brand.name}
+                className="w-full h-7 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+            </div>
+          ))}
         </div>
       </div>
-      
-      {/* Gradient overlays */}
-      <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent" />
-      <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent" />
     </div>
   );
 };

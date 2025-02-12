@@ -202,10 +202,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white hardware-accelerated">
-      {/* Main Content */}
       <div className="max-w-[480px] mx-auto bg-white min-h-screen hardware-accelerated">
-        {/* Enhanced Hero Section */}
-        <div className="relative">
+        {/* Hero Section */}
+        <div className="h-[85vh] relative">
           {/* Search Bar Overlay */}
           <div className="absolute top-4 left-0 right-0 z-10 px-4">
             <div 
@@ -215,54 +214,56 @@ const Home = () => {
               <input
                 type="text"
                 placeholder="Search for products..."
-                className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-full text-white placeholder-white/70 focus:outline-none"
+                className="w-full pl-10 pr-4 py-3.5 bg-black/40 backdrop-blur-md border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none shadow-lg"
                 readOnly
               />
-              <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-5 h-5" />
+              <HiSearch className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-white/70 w-5 h-5" />
             </div>
           </div>
 
           {/* Carousel Section */}
-          <div className="h-[85vh]">
+          <div className="h-full">
             <ImageCarousel 
               images={carouselSlides.map(slide => slide.image)}
-              slides={carouselSlides.map(slide => slide.content)}
+              slides={carouselSlides.map(slide => (
+                <div className="flex flex-col items-center text-center">
+                  <h1 className="text-2xl font-bold mb-1">{slide.content.props.children[0].props.children}</h1>
+                  <p className="text-sm mb-3 opacity-90">{slide.content.props.children[1].props.children}</p>
+                  {slide.content.props.children[2]}
+                </div>
+              ))}
               autoPlayInterval={5000}
             />
           </div>
         </div>
 
-        {/* Featured Brands */}
+        {/* Featured Categories (renamed from Shop by Category) */}
         <section className="py-6 px-4">
-          <h2 className="text-xl font-bold text-center mb-4">Featured Brands</h2>
-          <MemoizedBrandSlider brands={brands} />
-        </section>
-
-        {/* Categories */}
-        <section className="py-6">
-          <h2 className="text-xl font-bold text-center mb-4">Shop by Category</h2>
-          <div className="grid grid-cols-3 gap-1 px-1">
-            {categories.map((category) => (
+          <h2 className="text-lg font-bold mb-4">Featured Categories</h2>
+          
+          {/* First Row - Large Cards */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {categories.slice(0, 2).map((category) => (
               <Link
                 key={category.name}
                 to={`/search?category=${category.name}`}
-                className="group relative block"
+                className="group relative block rounded-2xl overflow-hidden aspect-[4/5] shadow-sm"
               >
-                <div className="aspect-[3/4] overflow-hidden">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover brightness-[0.85] group-hover:brightness-75 transition-all duration-300"
-                  />
-                  <div className="absolute inset-0 flex flex-col justify-end p-2">
-                    <h3 className="text-white text-sm font-medium">
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/60">
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <h3 className="text-white font-medium text-lg mb-1">
                       {category.name}
                     </h3>
-                    <div className="flex items-center mt-0.5 text-white/90">
-                      <span className="text-[10px] font-medium">Shop Now</span>
+                    <div className="flex items-center text-white/90 bg-black/30 w-fit px-2.5 py-1 rounded-full text-xs">
+                      <span>Explore</span>
                       <svg
-                        className="w-3 h-3 ml-0.5 transform group-hover:translate-x-1 transition-transform"
+                        className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -280,10 +281,63 @@ const Home = () => {
               </Link>
             ))}
           </div>
+
+          {/* Scrollable Categories Row */}
+          <div className="overflow-x-auto hide-scrollbar">
+            <div className="flex gap-3 pb-2">
+              {categories.slice(2).map((category) => (
+                <Link
+                  key={category.name}
+                  to={`/search?category=${category.name}`}
+                  className="group flex-shrink-0 relative block w-32 rounded-xl overflow-hidden aspect-[3/4] shadow-sm"
+                >
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60">
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                      <h3 className="text-white font-medium text-sm mb-1">
+                        {category.name}
+                      </h3>
+                      <div className="flex items-center text-white/90 text-[10px]">
+                        <span>View All</span>
+                        <svg
+                          className="w-3 h-3 ml-0.5 group-hover:translate-x-0.5 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </section>
 
-        {/* Latest Products */}
+        {/* New Arrivals Section */}
         <ProductsSection />
+
+        {/* Partnered Brands Section (renamed from Featured Brands) */}
+        <section className="py-6">
+          <h2 className="text-xl font-bold text-center mb-4">Partnered Brands</h2>
+          <div className="h-[12vh] bg-white/80 backdrop-blur-sm flex flex-col justify-center">
+            <div className="flex-1 flex items-center overflow-hidden py-1">
+              <MemoizedBrandSlider brands={brands} />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

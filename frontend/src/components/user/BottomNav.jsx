@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, User } from 'lucide-react';
+import { Home, Search, ShoppingBag, User } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 // Custom BagWithHeart icon component
@@ -35,67 +35,64 @@ const BagWithHeart = ({ isActive, hasItems }) => (
 
 const BottomNav = () => {
   const location = useLocation();
+  const currentPath = location.pathname;
   const { cartItems } = useCart();
   
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const navItems = [
+    {
+      icon: Home,
+      label: 'Home',
+      path: '/'
+    },
+    {
+      icon: Search,
+      label: 'Search',
+      path: '/search'
+    },
+    {
+      icon: ShoppingBag,
+      label: 'Cart',
+      path: '/cart'
+    },
+    {
+      icon: User,
+      label: 'Profile',
+      path: '/profile'
+    }
+  ];
 
   return (
-    <nav className="bg-white border-t border-gray-100 px-6 py-3 backdrop-blur-lg bg-white/80">
-      <div className="flex justify-between items-center max-w-[380px] mx-auto">
-        <Link 
-          to="/" 
-          className={`flex flex-col items-center ${
-            isActive('/') 
-              ? 'text-black' 
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Home className="w-5 h-5" strokeWidth={isActive('/') ? 2.5 : 1.5} />
-          <span className="text-[10px] mt-1 font-medium">Home</span>
-        </Link>
-        
-        <Link 
-          to="/search" 
-          className={`flex flex-col items-center ${
-            isActive('/search') 
-              ? 'text-black' 
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Search className="w-5 h-5" strokeWidth={isActive('/search') ? 2.5 : 1.5} />
-          <span className="text-[10px] mt-1 font-medium">Search</span>
-        </Link>
-        
-        <Link 
-          to="/cart" 
-          className={`flex flex-col items-center ${
-            isActive('/cart') 
-              ? 'text-black' 
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <BagWithHeart 
-            isActive={isActive('/cart')} 
-            hasItems={cartItems?.length}
-          />
-          <span className="text-[10px] mt-1 font-medium">Cart</span>
-        </Link>
-        
-        <Link 
-          to="/profile" 
-          className={`flex flex-col items-center ${
-            isActive('/profile') 
-              ? 'text-black' 
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <User className="w-5 h-5" strokeWidth={isActive('/profile') ? 2.5 : 1.5} />
-          <span className="text-[10px] mt-1 font-medium">Profile</span>
-        </Link>
+    <div className="bg-white border-t py-2 px-6">
+      <div className="flex items-center justify-between">
+        {navItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex flex-col items-center"
+            >
+              <div 
+                className={`p-2 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-black text-white scale-110' 
+                    : 'text-gray-500 hover:text-black hover:bg-gray-100'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+              </div>
+              <span 
+                className={`text-xs mt-1 font-medium ${
+                  isActive ? 'text-black' : 'text-gray-500'
+                }`}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
-    </nav>
+    </div>
   );
 };
 

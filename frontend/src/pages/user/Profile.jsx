@@ -120,7 +120,7 @@ const Profile = () => {
     },
     {
       icon: MapPin,
-      label: 'Address',
+      label: 'Manage Addresses',
       onClick: () => navigate('/address')
     },
     {
