@@ -31,29 +31,30 @@ const Profile = () => {
       try {
         if (!user) return;
 
-        console.log('Current user ID:', user.id); // Debug log
+        console.log('Current user ID:', user.id);
 
         // First try to fetch the existing profile
         let { data: profile, error: fetchError } = await supabase
           .from('user_profiles')
-          .select()
+          .select('*')
           .eq('id', user.id)
-          .maybeSingle();
+          .single();
 
-        if (fetchError) {
+        if (fetchError && fetchError.code !== 'PGRST116') {
           console.error('Error fetching profile:', fetchError);
           setError('Failed to load profile. Please try again later.');
           return;
         }
 
         if (!profile) {
-          console.log('Creating new profile for user:', user.id); // Debug log
+          console.log('Creating new profile for user:', user.id);
           
           const { data: newProfile, error: insertError } = await supabase
             .from('user_profiles')
             .insert({
               id: user.id,
               full_name: user.user_metadata?.full_name || '',
+              email: user.email,
               phone_number: user.phone || '',
               address: ''
             })
@@ -62,17 +63,10 @@ const Profile = () => {
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
-            console.error('Error details:', {
-              code: insertError.code,
-              message: insertError.message,
-              details: insertError.details,
-              hint: insertError.hint
-            });
             setError('Failed to create profile. Please try again later.');
             return;
           }
 
-          console.log('Successfully created profile:', newProfile); // Debug log
           profile = newProfile;
         }
 

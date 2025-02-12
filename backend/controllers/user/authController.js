@@ -7,7 +7,12 @@ exports.signup = async (req, res) => {
         // Sign up the user with Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                data: {
+                    full_name
+                }
+            }
         });
 
         if (authError) throw authError;
@@ -17,20 +22,30 @@ exports.signup = async (req, res) => {
             .from('user_profiles')
             .insert([
                 {
-                    id: authData.user.id,  // UUID from auth.users
-                    full_name,             // Only storing full_name, as per schema
+                    id: authData.user.id,
+                    full_name,
+                    email: email,
                 }
-            ]);
+            ])
+            .select()
+            .single();
 
         if (profileError) throw profileError;
 
         res.status(201).json({
             success: true,
             message: 'User created successfully',
-            data: authData
+            data: {
+                user: {
+                    ...authData.user,
+                    profile: profileData
+                },
+                session: authData.session
+            }
         });
 
     } catch (error) {
+        console.error('Signup error:', error);
         res.status(400).json({
             success: false,
             message: error.message
@@ -49,13 +64,31 @@ exports.login = async (req, res) => {
 
         if (error) throw error;
 
+        // Get user profile data
+        const { data: profileData, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+            throw profileError;
+        }
+
         res.status(200).json({
             success: true,
             message: 'Login successful',
-            data
+            data: {
+                user: {
+                    ...data.user,
+                    profile: profileData || null
+                },
+                session: data.session
+            }
         });
 
     } catch (error) {
+        console.error('Login error:', error);
         res.status(401).json({
             success: false,
             message: error.message
