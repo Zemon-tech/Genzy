@@ -95,38 +95,82 @@ const AddProduct = () => {
     const newImages = [];
     const newPreviewImages = [];
 
+    // Validate file types and size
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const maxSize = 1.46 * 1024 * 1024; // 1.46MB
+
     for (const file of files) {
       try {
+        // Log file information for debugging
+        console.log('File details:', {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        });
+
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+          setError(`File "${file.name}" is not supported. Please upload JPEG, JPG or PNG images only.`);
+          continue;
+        }
+
+        // Validate file size
+        if (file.size > maxSize) {
+          setError(`File "${file.name}" is too large. Maximum size is 1.46MB.`);
+          continue;
+        }
+
         // Sanitize filename: remove special characters and spaces
         const timestamp = Date.now();
         const sanitizedName = file.name
-          .replace(/[^a-zA-Z0-9.]/g, '_') // Replace special chars with underscore
-          .replace(/\s+/g, '_'); // Replace spaces with underscore
+          .replace(/[^a-zA-Z0-9.]/g, '_')
+          .replace(/\s+/g, '_');
         const fileName = `${timestamp}_${sanitizedName}`;
 
+        // Create FormData for proper file upload
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Upload the file
         const { data, error } = await supabase.storage
           .from('product_images')
           .upload(fileName, file, {
             cacheControl: '3600',
-            upsert: false
+            upsert: false,
+            contentType: file.type // Explicitly set content type
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase upload error:', error);
+          throw error;
+        }
+
+        console.log('Upload successful:', data);
 
         const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product_images/${data.path}`;
         newImages.push(imageUrl);
         newPreviewImages.push(URL.createObjectURL(file));
+
+        // Show success message
+        setSuccess(`File "${file.name}" uploaded successfully!`);
       } catch (error) {
         console.error('Error uploading image:', error);
-        setError('Error uploading image. Please try again.');
+        setError(
+          error.message === 'invalid_mime_type' 
+            ? `File "${file.name}" upload failed: Invalid file type. Please upload JPEG, JPG or PNG images only.`
+            : `Error uploading "${file.name}": ${error.message || 'Unknown error'}`
+        );
       }
     }
 
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...newImages]
-    }));
-    setPreviewImages(prev => [...prev, ...newPreviewImages]);
+    if (newImages.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...newImages]
+      }));
+      setPreviewImages(prev => [...prev, ...newPreviewImages]);
+      setError(''); // Clear error if at least one image was uploaded successfully
+    }
   };
 
   const handleSubmit = async (e) => {
