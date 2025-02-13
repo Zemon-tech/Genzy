@@ -1,47 +1,62 @@
 import { Link } from 'react-router-dom';
 import { calculateDiscount } from '../../utils/helpers';
+import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
   return (
     <Link 
       to={`/product/${product.id}`}
-      className="group relative block"
+      className="group block"
     >
-      {/* Image Container */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-        <img
-          src={product.images[0]}
-          alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-        
-        {/* Discount Badge */}
-        {calculateDiscount(product.mrp, product.selling_price) > 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1">
-            {calculateDiscount(product.mrp, product.selling_price)}% OFF
-          </div>
-        )}
-      </div>
+      {/* Card Container with Glassmorphism */}
+      <motion.div 
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.2 }}
+        className="relative rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+      >
+        {/* Image Container */}
+        <div className="relative aspect-[4/5] overflow-hidden bg-gray-50">
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+          />
+          
+          {/* Discount Badge with Gradient */}
+          {calculateDiscount(product.mrp, product.selling_price) > 0 && (
+            <div className="absolute top-3 right-3 backdrop-blur-md">
+              <div className="relative px-3 py-1.5 bg-gradient-to-r from-fuchsia-600 to-pink-600 rounded-full shadow-lg">
+                <span className="relative text-xs font-bold text-white tracking-wider">
+                  {calculateDiscount(product.mrp, product.selling_price)}% OFF
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
-      {/* Product Info */}
-      <div className="mt-3 px-2">
-        <h3 className="text-sm font-medium text-gray-900 truncate">
-          {product.name}
-        </h3>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-sm font-semibold">₹{product.selling_price}</span>
-          <span className="text-xs text-gray-500 line-through">₹{product.mrp}</span>
-        </div>
-        
-        {/* Size Options */}
-        <div className="mt-2 flex gap-1">
-          {product.sizes.map(size => (
-            <span key={size} className="text-xs border px-1.5 py-0.5 text-gray-600">
-              {size}
+        {/* Product Info with Glassmorphism */}
+        <div className="p-4 backdrop-blur-md bg-white/80">
+          {/* Brand Name */}
+          <p className="text-xs font-medium text-gray-500 tracking-wider uppercase mb-1">
+            {product.sellers?.brand_name || 'Brand Name'}
+          </p>
+          
+          {/* Product Name */}
+          <h3 className="font-medium text-gray-900 tracking-tight truncate mb-2 group-hover:text-indigo-600 transition-colors">
+            {product.name}
+          </h3>
+
+          {/* Price Section */}
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-bold bg-gradient-to-r from-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
+              ₹{product.selling_price}
             </span>
-          ))}
+            <span className="text-sm text-gray-500 line-through">
+              ₹{product.mrp}
+            </span>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </Link>
   );
 };

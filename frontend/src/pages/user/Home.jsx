@@ -167,8 +167,8 @@ const Home = () => {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('*')
-          .limit(6); // Fetch latest 6 products
+          .select('*, sellers(brand_name)')
+          .limit(6);
           
         if (error) throw error;
         setProducts(data);
@@ -183,13 +183,41 @@ const Home = () => {
   }, []);
 
   const ProductsSection = React.memo(() => (
-    <section className="py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">New Arrivals</h2>
-        <Link to="/search" className="text-indigo-600 hover:text-indigo-700">
-          View All →
+    <section className="py-12 px-4">
+      <div className="flex justify-between items-center mb-8">
+        {/* Section Title */}
+        <div>
+          <h4 className="text-sm font-medium text-indigo-600 tracking-wider uppercase mb-1">
+            Fresh Drops
+          </h4>
+          <h2 className="text-2xl font-bold tracking-tight">
+            New Arrivals
+          </h2>
+        </div>
+
+        {/* View All Link with Animation */}
+        <Link 
+          to="/search" 
+          className="group flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <span className="text-sm font-medium">View All</span>
+          <svg
+            className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M17 8l4 4m0 0l-4 4m4-4H3"
+            />
+          </svg>
         </Link>
       </div>
+
+      {/* Products Grid */}
       <div className="grid grid-cols-2 gap-4">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
