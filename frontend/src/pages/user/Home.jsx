@@ -5,10 +5,13 @@ import { calculateDiscount } from '../../utils/helpers';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 import BrandSlider from '../../components/BrandSlider';
-import { HiSearch } from 'react-icons/hi';
+import { HiSearch, HiAdjustments } from 'react-icons/hi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
@@ -90,46 +93,13 @@ const Home = () => {
     }
   ];
 
-  const brands = [
-    { 
-      id: 1, 
-      name: 'Nike', 
-      logo: 'https://pngimg.com/uploads/nike/nike_PNG11.png'
-    },
-    { 
-      id: 2, 
-      name: 'Adidas', 
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Adidas_Logo.svg/2560px-Adidas_Logo.svg.png'
-    },
-    { 
-      id: 3, 
-      name: 'Puma', 
-      logo: 'https://logos-world.net/wp-content/uploads/2020/04/Puma-Logo.png'
-    },
-    { 
-      id: 4, 
-      name: 'Under Armour', 
-      logo: 'https://download.logo.wine/logo/Under_Armour/Under_Armour-Logo.wine.png'
-    },
-    { 
-      id: 5, 
-      name: 'New Balance', 
-      logo: 'https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Logo.png'
-    },
-    { 
-      id: 6, 
-      name: 'Reebok', 
-      logo: 'https://logos-world.net/wp-content/uploads/2020/04/Reebok-Logo.png'
-    }
-  ];
-
   const categories = [
     {
-      name: 'T-Shirts',
+      name: 'madhav',
       image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg'
     },
     {
-      name: 'Shirts',
+      name: 'satyajit',
       image: 'https://images.pexels.com/photos/297933/pexels-photo-297933.jpeg'
     },
     {
@@ -163,31 +133,46 @@ const Home = () => {
   ];
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch products with seller info - only brand_name
+        const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select('*, sellers(brand_name)')
           .limit(6);
-          
-        if (error) throw error;
-        setProducts(data);
+        
+        if (productsError) throw productsError;
+        setProducts(productsData);
+
+        // Fetch unique brands - only brand_name
+        const { data: brandsData, error: brandsError } = await supabase
+          .from('sellers')
+          .select('brand_name')
+          .not('brand_name', 'is', null);
+        
+        if (brandsError) throw brandsError;
+        setBrands(brandsData);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
+  // Filter products by brand
+  const filteredProducts = selectedBrand
+    ? products.filter(product => product.sellers?.brand_name === selectedBrand)
+    : products;
+
   const ProductsSection = React.memo(() => (
-    <section className="py-12 px-4">
-      <div className="flex justify-between items-center mb-8">
-        {/* Section Title */}
+    <section className="py-4 px-3">
+      {/* Section Header */}
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h4 className="text-sm font-medium text-indigo-600 tracking-wider uppercase mb-1">
+          <h4 className="text-sm font-medium text-indigo-600 tracking-wider uppercase mb-0.5">
             Fresh Drops
           </h4>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -195,42 +180,76 @@ const Home = () => {
           </h2>
         </div>
 
-        {/* View All Link with Animation */}
-        <Link 
-          to="/search" 
-          className="group flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        {/* Filter Toggle Button */}
+        <button 
+          onClick={() => document.getElementById('brandFilters').scrollIntoView({ behavior: 'smooth' })}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200"
         >
-          <span className="text-sm font-medium">View All</span>
-          <svg
-            className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <HiAdjustments className="w-5 h-5" />
+          <span className="text-sm font-medium">Filter</span>
+        </button>
+      </div>
+
+      {/* Brand Filters */}
+      <div id="brandFilters" className="mb-4 -mx-3">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar py-2 px-3">
+          <motion.button
+            onClick={() => setSelectedBrand(null)}
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
+              ${!selectedBrand 
+                ? 'bg-black text-white shadow-lg scale-105' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            whileTap={{ scale: 0.95 }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
-        </Link>
+            All Brands
+          </motion.button>
+          
+          {brands.map((brand) => (
+            <motion.button
+              key={brand.brand_name}
+              onClick={() => setSelectedBrand(brand.brand_name)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
+                ${selectedBrand === brand.brand_name 
+                  ? 'bg-black text-white shadow-lg scale-105' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              whileTap={{ scale: 0.95 }}
+            >
+              {brand.brand_name}
+            </motion.button>
+          ))}
+        </div>
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={selectedBrand || 'all'}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.2 }}
+          className="grid grid-cols-2 gap-2"
+        >
+          {filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Empty State */}
+      {filteredProducts.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No products found for this brand</p>
+        </div>
+      )}
     </section>
   ));
 
   const MemoizedBrandSlider = React.memo(BrandSlider);
 
   return (
-    <div className="min-h-screen bg-white hardware-accelerated">
-      <div className="max-w-[480px] mx-auto bg-white min-h-screen hardware-accelerated">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-[480px] mx-auto bg-white min-h-screen">
         {/* Hero Section */}
         <div className="h-[85vh] relative">
           {/* Search Bar Overlay */}

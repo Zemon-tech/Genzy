@@ -1,156 +1,116 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
 const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const progressTimerRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const animationFrameRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    setProgress(0);
-    startTimeRef.current = Date.now();
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  // Reset autoplay when manually interacted
+  const handleManualNavigation = (action) => {
+    setIsPaused(true);
+    action();
+    
+    // Resume autoplay after 10 seconds of inactivity
+    setTimeout(() => {
+      setIsPaused(false);
+    }, 10000);
   };
 
-  const prevSlide = (e) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-    setProgress(0);
-    startTimeRef.current = Date.now();
-  };
-
-  const goToSlide = (index) => {
-    setCurrentIndex(index);
-    setProgress(0);
-    startTimeRef.current = Date.now();
-  };
-
-  // Optimize the animation logic
   useEffect(() => {
-    let lastTime = Date.now();
-    let rafId;
+    if (isPaused) return;
 
-    const updateProgress = (timestamp) => {
-      if (!isAutoPlaying) return;
-
-      const currentTime = Date.now();
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-
-      setProgress(prev => {
-        const newProgress = prev + (deltaTime / autoPlayInterval) * 100;
-        
-        if (newProgress >= 100) {
-          nextSlide();
-          return 0;
-        }
-        return newProgress;
-      });
-
-      rafId = requestAnimationFrame(updateProgress);
-    };
-
-    if (isAutoPlaying) {
-      rafId = requestAnimationFrame(updateProgress);
-    }
-
-    return () => {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-    };
-  }, [isAutoPlaying, autoPlayInterval]);
-
-  const handleMouseEnter = () => setIsAutoPlaying(false);
-  const handleMouseLeave = () => {
-    setIsAutoPlaying(true);
-    startTimeRef.current = Date.now();
-  };
+    const interval = setInterval(nextSlide, autoPlayInterval);
+    return () => clearInterval(interval);
+  }, [nextSlide, autoPlayInterval, isPaused]);
 
   return (
-    <div 
-      className="relative w-full h-full"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Images */}
-      <div className="relative h-full overflow-hidden">
-        <div 
-          className="flex h-full"
-          style={{ 
-            transform: `translateX(-${currentIndex * 100}%)`,
-            transition: 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)',
-            willChange: 'transform'
+    <div className="relative h-full overflow-hidden">
+      <AnimatePresence initial={false} custom={currentIndex}>
+        <motion.div
+          key={currentIndex}
+          className="absolute inset-0 w-full h-full"
+          custom={currentIndex}
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "-100%" }}
+          transition={{
+            x: { type: "tween", duration: 0.5, ease: "easeInOut" },
           }}
         >
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className="w-full h-full flex-shrink-0 relative"
+          {/* Background Image */}
+          <div className="absolute inset-0">
+            <img
+              src={images[currentIndex]}
+              alt={`Slide ${currentIndex + 1}`}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          </div>
+
+          {/* Content - Moved to bottom middle */}
+          <div className="absolute bottom-12 left-0 right-0 text-white text-center px-6">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <img
-                src={image}
-                alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-              {/* Content Overlay for each slide */}
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 via-black/30 to-transparent">
-                <div className="px-8 pb-12 text-white max-w-sm mx-auto text-center">
-                  {slides[index]}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+              {slides[currentIndex]}
+            </motion.div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navigation Buttons */}
       <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 group z-10"
+        onClick={() => handleManualNavigation(prevSlide)}
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors"
       >
-        <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+        <HiChevronLeft className="w-6 h-6" />
       </button>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          nextSlide();
-        }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 group z-10"
+        onClick={() => handleManualNavigation(nextSlide)}
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors"
       >
-        <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+        <HiChevronRight className="w-6 h-6" />
       </button>
 
-      {/* Progress Indicators */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-3">
+      {/* Updated Dots Navigation - Moved closer to bottom */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
         {images.map((_, index) => (
           <button
             key={index}
-            onClick={() => goToSlide(index)}
-            className="relative h-2 rounded-full overflow-hidden"
-            style={{ width: index === currentIndex ? '24px' : '8px' }}
+            onClick={() => {
+              handleManualNavigation(() => setCurrentIndex(index));
+            }}
+            className="relative h-1.5 rounded-full transition-all duration-300 overflow-hidden"
+            style={{
+              width: index === currentIndex ? '1.5rem' : '0.375rem',
+            }}
           >
-            {/* Background bar */}
-            <div className="absolute inset-0 bg-white/30" />
-            
-            {/* Progress bar */}
-            {index === currentIndex && (
-              <div 
-                className="absolute inset-0 bg-white"
-                style={{ 
-                  transform: `scaleX(${progress / 100})`,
-                  transformOrigin: 'left',
-                  transition: 'transform 16ms linear'
+            {/* Base layer - semi-transparent white */}
+            <div className="absolute inset-0 bg-white/60" />
+
+            {/* Progress bar - only shown for active dot */}
+            {index === currentIndex && !isPaused && (
+              <motion.div
+                className="absolute inset-0 bg-white origin-left"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{
+                  duration: autoPlayInterval / 1000,
+                  ease: "linear",
+                  repeat: 0
                 }}
               />
-            )}
-            
-            {/* Inactive dots */}
-            {index !== currentIndex && (
-              <div className="absolute inset-0 bg-white/50 hover:bg-white/80 transition-colors" />
             )}
           </button>
         ))}

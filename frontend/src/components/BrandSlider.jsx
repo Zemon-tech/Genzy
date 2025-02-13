@@ -36,9 +36,10 @@ const BrandSlider = ({ brands }) => {
             willChange: 'transform'
           }}
         >
-          {brands.map((brand) => (
+          {/* Original brands */}
+          {brands.map((brand, index) => (
             <div
-              key={brand.id}
+              key={`brand-${index}`}
               className="flex-shrink-0 w-20"
             >
               <img
@@ -48,9 +49,11 @@ const BrandSlider = ({ brands }) => {
               />
             </div>
           ))}
-          {brands.map((brand) => (
+          
+          {/* Duplicated brands with unique keys */}
+          {brands.map((brand, index) => (
             <div
-              key={`${brand.id}-dup`}
+              key={`brand-dup-${index}`}
               className="flex-shrink-0 w-20"
             >
               <img
