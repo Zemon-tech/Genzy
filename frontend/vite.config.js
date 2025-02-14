@@ -16,7 +16,7 @@ export default defineConfig({
     allowedHosts: [
       "localhost",
       "127.0.0.1",
-      "8e07-2401-4900-47fc-324e-9db7-a3d9-41ff-92eb.ngrok-free.app" // Add your ngrok URL
+      "f665-2401-4900-8382-5c0e-a9fb-e6e1-3ebd-c10d.ngrok-free.app" // Add your ngrok URL
     ]
   }
 })
