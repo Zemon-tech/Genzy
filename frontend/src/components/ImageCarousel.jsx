@@ -5,12 +5,15 @@ import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 for next, -1 for previous
 
   const nextSlide = useCallback(() => {
+    setDirection(1);
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
   }, [images.length]);
 
   const prevSlide = useCallback(() => {
+    setDirection(-1);
     setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
   }, [images.length]);
 
@@ -32,16 +35,29 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
     return () => clearInterval(interval);
   }, [nextSlide, autoPlayInterval, isPaused]);
 
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? "100%" : "-100%",
+    }),
+    center: {
+      x: 0,
+    },
+    exit: (direction) => ({
+      x: direction > 0 ? "-100%" : "100%",
+    }),
+  };
+
   return (
     <div className="relative h-full overflow-hidden">
-      <AnimatePresence initial={false} custom={currentIndex}>
+      <AnimatePresence initial={false} custom={direction}>
         <motion.div
           key={currentIndex}
           className="absolute inset-0 w-full h-full"
-          custom={currentIndex}
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "-100%" }}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
           transition={{
             x: { type: "tween", duration: 0.5, ease: "easeInOut" },
           }}

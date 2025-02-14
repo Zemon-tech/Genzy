@@ -94,41 +94,61 @@ const Home = () => {
   ];
 
   const categories = [
+    // First two slots for news/sales updates
     {
-      name: 'madhav',
-      image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg'
+      name: "Flash Sale",
+      image: "gg.gif", // Example sale gif
+      type: "promo",
+      link: "/search?discount=true",
+      description: "Up to 70% Off | Limited Time"
     },
     {
-      name: 'satyajit',
-      image: 'https://images.pexels.com/photos/297933/pexels-photo-297933.jpeg'
+      name: "New Arrivals",
+      image: "ff.gif", // Example new arrivals gif
+      type: "promo",
+      link: "/search?sort=newest",
+      description: "Fresh Styles Just Dropped"
+    },
+    // Regular categories - matching the search page filters
+    {
+      name: "T-shirts",
+      image: "https://m.media-amazon.com/images/I/61yHkZpT15L._SX679_.jpg",
+      type: "category",
     },
     {
-      name: 'Co-ords',
-      image: 'https://images.pexels.com/photos/2896853/pexels-photo-2896853.jpeg'
+      name: "Shirts",
+      image: "https://m.media-amazon.com/images/I/61ZZ0vbAhsL._SY879_.jpg",
+      type: "category",
     },
     {
-      name: 'Sweatshirts',
-      image: 'https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg'
+      name: "Co-ords",
+      image: "https://m.media-amazon.com/images/I/61MVsaikwoL._SY879_.jpg",
+      type: "category",
     },
     {
-      name: 'Jeans',
-      image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg'
+      name: "Sweatshirts",
+      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7",
+      type: "category",
     },
     {
-      name: 'Trousers',
-      image: 'https://images.pexels.com/photos/3768005/pexels-photo-3768005.jpeg'
+      name: "Jeans",
+      image: "https://m.media-amazon.com/images/I/81WzIbilc9L._SY879_.jpg",
+      type: "category",
     },
     {
-      name: 'Jackets',
-      image: 'https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg'
+      name: "Trousers",
+      image: "https://m.media-amazon.com/images/I/61FkSi+4MqL._SY879_.jpg",
+      type: "category",
     },
     {
-      name: 'Sweaters',
-      image: 'https://images.pexels.com/photos/45982/pexels-photo-45982.jpeg'
+      name: "Jackets",
+      image: "https://m.media-amazon.com/images/I/615fQ9S1m-L._SY879_.jpg",
+      type: "category",
     },
     {
-      name: 'Activewear',
-      image: 'https://images.pexels.com/photos/2294342/pexels-photo-2294342.jpeg'
+      name: "Sweaters",
+      image: "https://m.media-amazon.com/images/I/71cinODyz-L._SX679_.jpg",
+      type: "category",
     }
   ];
 
@@ -284,58 +304,46 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Featured Categories (renamed from Shop by Category) */}
+        {/* Featured Categories */}
         <section className="py-6 px-4">
           <h2 className="text-lg font-bold mb-4">Featured Categories</h2>
           
-          {/* First Row - Large Cards */}
+          {/* First Row - Large Promo Cards */}
           <div className="grid grid-cols-2 gap-3 mb-3">
             {categories.slice(0, 2).map((category) => (
               <Link
                 key={category.name}
-                to={`/search?category=${category.name}`}
+                to={category.link}
                 className="group relative block rounded-2xl overflow-hidden aspect-[4/5] shadow-sm"
               >
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/60">
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="text-white font-medium text-lg mb-1">
+                <div className="absolute inset-0 overflow-hidden">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/80">
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="text-white font-bold text-xl mb-1">
                       {category.name}
                     </h3>
-                    <div className="flex items-center text-white/90 bg-black/30 w-fit px-2.5 py-1 rounded-full text-xs">
-                      <span>Explore</span>
-                      <svg
-                        className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
+                    <p className="text-white/90 text-sm">
+                      {category.description}
+                    </p>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
 
-          {/* Scrollable Categories Row */}
+          {/* Scrollable Categories Row - Simplified Cards */}
           <div className="overflow-x-auto hide-scrollbar">
             <div className="flex gap-3 pb-2">
               {categories.slice(2).map((category) => (
                 <Link
                   key={category.name}
-                  to={`/search?category=${category.name}`}
+                  to={`/search?category=${category.name}`} // Simplified URL parameter
                   className="group flex-shrink-0 relative block w-32 rounded-xl overflow-hidden aspect-[3/4] shadow-sm"
                 >
                   <img
@@ -346,25 +354,9 @@ const Home = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60">
                     <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                      <h3 className="text-white font-medium text-sm mb-1">
+                      <h3 className="text-white font-medium text-sm">
                         {category.name}
                       </h3>
-                      <div className="flex items-center text-white/90 text-[10px]">
-                        <span>View All</span>
-                        <svg
-                          className="w-3 h-3 ml-0.5 group-hover:translate-x-0.5 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
                     </div>
                   </div>
                 </Link>

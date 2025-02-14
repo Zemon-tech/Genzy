@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { HiSearch } from 'react-icons/hi';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [gender, setGender] = useState('all'); // 'all', 'male', 'female'
+  const [gender, setGender] = useState('all');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
 
   const categories = [
     'All',
@@ -20,59 +21,89 @@ const Search = () => {
     'Sweatshirts',
     'Jeans',
     'Trousers',
-    'Dresses',
     'Jackets',
     'Sweaters',
-    'Activewear'
   ];
 
-  // Mock search results - in real app, this would come from API
-  const searchResults = [
-    {
-      id: 1,
-      name: 'Classic White Shirt',
-      price: '₹1,499',
-      image: '/products/shirt1.jpg',
-    },
-    {
-      id: 2,
-      name: 'Black T-Shirt',
-      price: '₹899',
-      image: '/products/tshirt1.jpg',
-    },
-    // Add more mock products as needed
-  ];
-
+  // Initial load and URL parameter handling
   useEffect(() => {
-    fetchProducts();
-  }, [gender, activeCategory]);
+    const categoryFromUrl = searchParams.get('category');
+    const discountFromUrl = searchParams.get('discount');
+    const sortFromUrl = searchParams.get('sort');
 
-  const fetchProducts = async () => {
+    if (categoryFromUrl) {
+      setActiveCategory(categoryFromUrl);
+    }
+
+    fetchProducts({
+      category: categoryFromUrl || activeCategory,
+      gender,
+      discount: discountFromUrl === 'true',
+      sort: sortFromUrl
+    });
+  }, [searchParams]); // Only react to URL changes
+
+  // Handle filter changes
+  useEffect(() => {
+    fetchProducts({
+      category: activeCategory,
+      gender,
+      searchQuery
+    });
+  }, [activeCategory, gender]);
+
+  const fetchProducts = async ({ category, gender, searchQuery, discount, sort }) => {
     try {
+      setLoading(true);
       let query = supabase
         .from('products')
-        .select('*');
+        .select('*, sellers(brand_name)');
 
-      // Apply gender filter
-      if (gender === 'male') {
-        query = query.in('gender', ['male', 'unisex']);
-      } else if (gender === 'female') {
-        query = query.in('gender', ['female', 'unisex']);
+      // Apply filters
+      if (category && category !== 'All') {
+        query = query.eq('category', category);
       }
 
-      // Apply category filter if not 'All'
-      if (activeCategory !== 'All') {
-        query = query.eq('category', activeCategory);
+      if (gender !== 'all') {
+        query = query.in('gender', [gender, 'unisex']);
+      }
+
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+
+      if (discount) {
+        query = query.gt('discount_percentage', 0);
+      }
+
+      // Apply sorting
+      if (sort === 'newest') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sort === 'trending') {
+        query = query.order('views', { ascending: false });
       }
 
       const { data, error } = await query;
+      
       if (error) throw error;
-      setProducts(data);
+      setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle search input
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    fetchProducts({
+      category: activeCategory,
+      gender,
+      searchQuery: value
+    });
   };
 
   return (
@@ -84,7 +115,7 @@ const Search = () => {
             type="text"
             placeholder="Search products..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchInput}
             className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500"
           />
           <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
