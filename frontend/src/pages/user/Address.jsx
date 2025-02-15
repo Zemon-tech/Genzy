@@ -4,345 +4,302 @@ import supabase from '../../config/supabase';
 import { ArrowLeft, Plus, MapPin, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../components/ui/form"
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+// Form validation schema
+const formSchema = z.object({
+  address: z.string().min(1, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  pincode: z.string().length(6, "Pincode must be 6 digits"),
+});
 
 const Address = () => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    full_name: '',
-    phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    is_default: false
+  console.log('Address component render:', { user, authLoading, timestamp: new Date().toISOString() });
+
+  // Initialize form
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+    },
   });
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/login');
+      return;
     }
-  }, [user, navigate]);
 
-  const [authChecking, setAuthChecking] = useState(true);
+    fetchAddresses(user.id);
+  }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      setAuthChecking(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchAddresses();
-  }, [user]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      console.log('Current user:', user);
-      if (error) console.error('Auth error:', error);
-    };
-    
-    checkAuth();
-  }, []);
-
-  const fetchAddresses = async () => {
+  const fetchAddresses = async (userId) => {
     try {
-      if (!user) return;
+      setLoading(true);
+      if (!userId) return;
 
-      const { data, error } = await supabase
-        .from('addresses')
+      console.log('Fetching addresses for user:', userId);
+      const { data: profileData, error } = await supabase
+        .from('user_profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching addresses:', error);
-        toast.error('Failed to load addresses');
-        return;
-      }
-
-      setAddresses(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (!user) {
-        toast.error('Please login to add an address');
-        return;
-      }
-
-      // Create the address object exactly matching the database schema
-      const newAddress = {
-        user_id: user.id,
-        full_name: formData.full_name,
-        phone: formData.phone,
-        address_line1: formData.address_line1,
-        address_line2: formData.address_line2 || null, // Handle optional field
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        is_default: formData.is_default
-      };
-
-      // First, if this is a default address, update existing default
-      if (newAddress.is_default) {
-        await supabase
-          .from('addresses')
-          .update({ is_default: false })
-          .eq('user_id', user.id)
-          .eq('is_default', true);
-      }
-
-      // Then insert the new address
-      const { data, error } = await supabase
-        .from('addresses')
-        .insert([newAddress])
-        .select()
+        .eq('id', userId)
         .single();
 
       if (error) {
-        console.error('Error details:', error);
-        toast.error(error.message || 'Failed to add address');
-        return;
+        if (error.code === 'PGRST116') {
+          setAddresses([]);
+        } else {
+          throw error;
+        }
+      } else if (profileData?.address) {
+        setAddresses([profileData.address]);
+      } else {
+        setAddresses([]);
       }
-
-      setAddresses(prev => [data, ...prev]);
-      setShowForm(false);
-      setFormData({
-        full_name: '',
-        phone: '',
-        address_line1: '',
-        address_line2: '',
-        city: '',
-        state: '',
-        pincode: '',
-        is_default: false
-      });
-      toast.success('Address added successfully');
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('An unexpected error occurred');
+      console.error('Error fetching addresses:', error);
+      toast.error('Failed to load address');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this address?')) return;
+  const handleEdit = (address) => {
+    // Parse the existing address string
+    const [streetAddress, city, stateAndPin] = address.split(', ');
+    const [state, pincode] = stateAndPin.split(' - ');
 
+    // Set form values
+    form.reset({
+      address: streetAddress,
+      city,
+      state,
+      pincode,
+    });
+
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const onSubmit = async (values) => {
     try {
-      const { error } = await supabase
-        .from('addresses')
-        .delete()
-        .eq('id', id);
+      if (!user) {
+        throw new Error('No active session. Please login again.');
+      }
+
+      const formattedAddress = `${values.address}, ${values.city}, ${values.state} - ${values.pincode}`;
+      console.log('Updating address for user:', user.id);
+      console.log('New address:', formattedAddress);
+
+      // First get the existing profile
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Prepare update data
+      const updateData = {
+        id: user.id,
+        address: formattedAddress,
+        updated_at: new Date().toISOString(),
+        full_name: existingProfile?.full_name || user.user_metadata?.full_name || 'User',
+        // Add any other required fields with their existing values
+        created_at: existingProfile?.created_at || new Date().toISOString(),
+        phone_number: existingProfile?.phone_number || null
+      };
+
+      // Perform the upsert
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(updateData)
+        .select()
+        .single();
 
       if (error) throw error;
+      if (!data) throw new Error('Update failed - no data returned');
 
-      setAddresses(prev => prev.filter(addr => addr.id !== id));
-      toast.success('Address deleted successfully');
+      console.log('Update successful:', data);
+      setAddresses([formattedAddress]);
+      toast.success(isEditing ? 'Address updated successfully' : 'Address added successfully');
+      setShowForm(false);
+      setIsEditing(false);
+      form.reset();
+
+      await fetchAddresses(user.id);
     } catch (error) {
-      toast.error('Error deleting address');
-      console.error(error);
+      console.error('Error in onSubmit:', error);
+      toast.error(`Failed to update address: ${error.message}`);
+      if (error.message.includes('session')) {
+        navigate('/login');
+      }
     }
   };
 
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
+  // Show loading state while auth is being checked
+  if (authLoading) {
+    return <div className="p-4">Checking authentication...</div>;
+  }
+
+  // Show loading state while addresses are being fetched
+  if (loading) {
+    return <div className="p-4">Loading addresses...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[480px] mx-auto bg-white min-h-screen">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b">
-          <div className="flex items-center h-14 px-4">
-            <button 
-              onClick={() => navigate(-1)}
-              className="mr-4"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-lg font-semibold">Manage Addresses</h1>
-          </div>
-        </div>
+    <div className="p-4 max-w-2xl mx-auto">
+      <div className="flex items-center gap-2 mb-6">
+        <button onClick={() => navigate(-1)} className="p-2">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-semibold">Manage Addresses</h1>
+      </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="p-4">
-            <div className="animate-pulse space-y-4">
-              <div className="h-12 bg-gray-200 rounded-lg"></div>
-              <div className="h-32 bg-gray-200 rounded-lg"></div>
-            </div>
-          </div>
-        )}
+      {/* Add/Edit Address Button */}
+      {!showForm && (
+        <Button
+          onClick={() => {
+            setShowForm(true);
+            setIsEditing(false);
+            form.reset(); // Reset form when adding new address
+          }}
+          className="w-full mb-4 flex items-center gap-2 justify-center"
+          variant="outline"
+        >
+          <Plus className="w-4 h-4" />
+          Add New Address
+        </Button>
+      )}
 
-        {!loading && (
-          <div className="p-4">
-            {/* Add New Address Button */}
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center gap-2 text-gray-600 hover:border-gray-400 transition-colors"
+      {/* Address Form */}
+      {showForm && (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-6 p-4 border rounded-lg">
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="house/flat no, building name, street, area" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="enter city name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <FormControl>
+                    <Input placeholder="enter state name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="pincode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pincode</FormLabel>
+                  <FormControl>
+                    <Input placeholder="enter pincode" maxLength={6} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                {isEditing ? 'Update Address' : 'Save Address'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowForm(false);
+                  setIsEditing(false);
+                  form.reset();
+                }}
+                className="flex-1"
               >
-                <Plus className="w-5 h-5" />
-                Add New Address
-              </button>
-            )}
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
+      )}
 
-            {/* Address Form */}
-            {showForm && (
-              <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Phone Number"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address Line 1"
-                    value={formData.address_line1}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address_line1: e.target.value }))}
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address Line 2 (Optional)"
-                    value={formData.address_line2}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address_line2: e.target.value }))}
-                    className="w-full p-3 border rounded-lg"
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="City"
-                      value={formData.city}
-                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full p-3 border rounded-lg"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="State"
-                      value={formData.state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full p-3 border rounded-lg"
-                      required
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Pincode"
-                    value={formData.pincode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pincode: e.target.value }))}
-                    className="w-full p-3 border rounded-lg"
-                    required
-                  />
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_default}
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_default: e.target.checked }))}
-                      className="w-4 h-4 rounded text-indigo-600"
-                    />
-                    <span className="text-sm text-gray-600">Set as default address</span>
-                  </label>
+      {/* Existing Addresses */}
+      <div className="space-y-4">
+        {addresses.map((address, index) => (
+          <div key={index} className="p-4 border rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-2">
+                <MapPin className="w-5 h-5 mt-1 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm">{address}</p>
                 </div>
-
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="flex-1 py-3 border rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400"
-                  >
-                    Save Address
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Address List */}
-            <div className="space-y-4 mt-6">
-              {addresses.map((address) => (
-                <div 
-                  key={address.id} 
-                  className="p-4 border rounded-lg relative"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-3">
-                      <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-medium">{address.full_name}</div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {address.address_line1}
-                          {address.address_line2 && `, ${address.address_line2}`}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {address.city}, {address.state} - {address.pincode}
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          Phone: {address.phone}
-                        </div>
-                        {address.is_default && (
-                          <span className="inline-block mt-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                            Default Address
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleDelete(address.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-full"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleEdit(address)}
+                className="shrink-0"
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

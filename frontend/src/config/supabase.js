@@ -7,10 +7,19 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
-    },
-    db: {
-        schema: 'public'
+        detectSessionInUrl: false,
+        storage: localStorage,
+        storageKey: 'my-app-auth',
+        flowType: 'pkce'
+    }
+});
+
+// Minimal auth state change logging
+supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'TOKEN_REFRESHED' && session) {
+        localStorage.setItem('my-app-auth', JSON.stringify(session));
+    } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('my-app-auth');
     }
 });
 
