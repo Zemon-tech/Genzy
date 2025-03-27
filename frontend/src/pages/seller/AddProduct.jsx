@@ -133,7 +133,7 @@ const AddProduct = () => {
 
         // Upload the file
         const { data, error } = await supabase.storage
-          .from('product_images')
+          .from('productimages')
           .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false,
@@ -147,7 +147,7 @@ const AddProduct = () => {
 
         console.log('Upload successful:', data);
 
-        const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product_images/${data.path}`;
+        const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/productimages/${data.path}`;
         newImages.push(imageUrl);
         newPreviewImages.push(URL.createObjectURL(file));
 

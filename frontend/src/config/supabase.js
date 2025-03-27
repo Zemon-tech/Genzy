@@ -3,6 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase credentials. Please check your .env file.');
+}
+
+// Log the URL (without the key) for debugging
+console.log('Supabase URL being used:', supabaseUrl);
+
 const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true,
@@ -14,13 +21,25 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
     }
 });
 
-// Minimal auth state change logging
-supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'TOKEN_REFRESHED' && session) {
-        localStorage.setItem('my-app-auth', JSON.stringify(session));
-    } else if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('my-app-auth');
+// Verify connection
+const verifyConnection = async () => {
+    try {
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+            console.error('Supabase connection error:', error);
+        } else {
+            console.log('Supabase connection verified successfully');
+        }
+    } catch (err) {
+        console.error('Failed to verify Supabase connection:', err);
     }
+};
+
+verifyConnection();
+
+// Test connection and log any issues
+supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session);
 });
 
 // Helper function to generate a unique file name
