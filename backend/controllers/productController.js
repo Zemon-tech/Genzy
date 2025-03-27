@@ -1,4 +1,5 @@
 import { deleteImageFromBucket } from '../utils/supabaseStorage.js'
+import supabase from '../config/supabase.js';
 
 export const deleteProduct = async (req, res) => {
   try {
@@ -32,4 +33,51 @@ export const deleteProduct = async (req, res) => {
     console.error('Error in deleteProduct:', error)
     res.status(500).json({ message: 'Error deleting product', error: error.message })
   }
-} 
+}
+
+/**
+ * Get products with optional category filtering
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getProducts = async (req, res) => {
+  try {
+    const { category } = req.query;
+    console.log('Getting products with category:', category);
+    
+    // Start building the query
+    let query = supabase.from('products').select('*, sellers(brand_name)');
+    
+    // Add category filter if provided
+    if (category) {
+      // Convert URL slug format (e.g., 't-shirt') to match the database format (e.g., 'T-shirts')
+      // This assumes the categories are stored with first letter capitalized in the database
+      const formattedCategory = category
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      console.log('Formatted category for DB query:', formattedCategory);
+      
+      // Filter by the category column
+      query = query.eq('category', formattedCategory);
+    }
+    
+    // Execute the query
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ error: 'Failed to fetch products' });
+    }
+    
+    // Ensure we're sending an array even if data is null or undefined
+    const productsArray = Array.isArray(data) ? data : [];
+    console.log(`Found ${productsArray.length} products`);
+    
+    return res.status(200).json(productsArray);
+  } catch (error) {
+    console.error('Server error:', error);
+    return res.status(500).json({ error: 'An unexpected error occurred' });
+  }
+}; 

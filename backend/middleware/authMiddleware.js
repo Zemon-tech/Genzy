@@ -1,10 +1,10 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // In production, always use environment variable
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
 
 // Middleware to verify access token
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
     try {
         console.log('Cookies received:', req.cookies);
         const token = req.cookies.accessToken;
@@ -47,7 +47,7 @@ const verifyToken = (req, res, next) => {
 };
 
 // Generate tokens
-const generateTokens = (user) => {
+export const generateTokens = (user) => {
     const accessToken = jwt.sign(
         { userId: user.id, email: user.email },
         JWT_SECRET,
@@ -64,7 +64,7 @@ const generateTokens = (user) => {
 };
 
 // Set cookies
-const setTokenCookies = (res, { accessToken, refreshToken }) => {
+export const setTokenCookies = (res, { accessToken, refreshToken }) => {
     // Set access token cookie
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
@@ -85,7 +85,7 @@ const setTokenCookies = (res, { accessToken, refreshToken }) => {
 };
 
 // Clear auth cookies
-const clearTokenCookies = (res) => {
+export const clearTokenCookies = (res) => {
     res.cookie('accessToken', '', { 
         maxAge: 0,
         path: '/',
@@ -103,7 +103,7 @@ const clearTokenCookies = (res) => {
 };
 
 // Refresh token middleware
-const refreshAccessToken = async (req, res) => {
+export const refreshAccessToken = async (req, res) => {
     try {
         console.log('Refresh token request received');
         console.log('Cookies:', req.cookies);
@@ -152,12 +152,4 @@ const refreshAccessToken = async (req, res) => {
                 : 'Invalid refresh token'
         });
     }
-};
-
-module.exports = {
-    verifyToken,
-    generateTokens,
-    setTokenCookies,
-    clearTokenCookies,
-    refreshAccessToken
 }; 

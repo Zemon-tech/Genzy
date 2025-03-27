@@ -1,7 +1,7 @@
-const supabase = require('../../config/supabase');
-const { generateTokens, setTokenCookies, clearTokenCookies } = require('../../middleware/authMiddleware');
+import supabase from '../../config/supabase.js';
+import { generateTokens, setTokenCookies, clearTokenCookies } from '../../middleware/authMiddleware.js';
 
-exports.signup = async (req, res) => {
+export const signup = async (req, res) => {
     try {
         const { email, password, full_name } = req.body;
 
@@ -57,7 +57,7 @@ exports.signup = async (req, res) => {
     }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -103,7 +103,7 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.logout = async (req, res) => {
+export const logout = async (req, res) => {
     try {
         await supabase.auth.signOut();
         clearTokenCookies(res);
@@ -122,7 +122,7 @@ exports.logout = async (req, res) => {
 };
 
 // Get current user session
-exports.getSession = async (req, res) => {
+export const getSession = async (req, res) => {
     try {
         // The user object is attached by the verifyToken middleware
         if (!req.user) {

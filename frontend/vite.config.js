@@ -23,6 +23,15 @@ export default defineConfig({
       "localhost",
       "127.0.0.1",
       "f665-2401-4900-8382-5c0e-a9fb-e6e1-3ebd-c10d.ngrok-free.app" // Add your ngrok URL
-    ]
+    ],
+    proxy: {
+      // Proxy API requests to the backend server
+      '/api': {
+        target: 'http://localhost:5011',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      }
+    }
   }
 })

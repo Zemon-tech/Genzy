@@ -1,6 +1,14 @@
-const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+import { createClient } from '@supabase/supabase-js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import { dirname } from 'path';
+
+// Get the directory path for the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -36,4 +44,4 @@ const testConnection = async () => {
 
 testConnection();
 
-module.exports = supabase; 
+export default supabase; 

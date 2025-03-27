@@ -343,7 +343,7 @@ const Home = () => {
               {categories.slice(2).map((category) => (
                 <Link
                   key={category.name}
-                  to={`/search?category=${category.name}`} // Simplified URL parameter
+                  to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                   className="group flex-shrink-0 relative block w-32 rounded-xl overflow-hidden aspect-[3/4] shadow-sm"
                 >
                   <img

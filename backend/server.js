@@ -1,10 +1,23 @@
-const express = require('express');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
 
-const userAuthRoutes = require('./routes/user/authRoutes');
-const sellerAuthRoutes = require('./routes/seller/authRoutes');
+// Import routes
+import userAuthRoutes from './routes/user/authRoutes.js';
+import sellerAuthRoutes from './routes/seller/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+
+// Import middleware
+import { refreshAccessToken } from './middleware/authMiddleware.js';
+
+// Configure environment variables
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
@@ -40,9 +53,9 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/user/auth', userAuthRoutes);
 app.use('/api/seller/auth', sellerAuthRoutes);
+app.use('/api/products', productRoutes);
 
 // Add refresh token route
-const { refreshAccessToken } = require('./middleware/authMiddleware');
 app.post('/api/auth/refresh', refreshAccessToken);
 
 const PORT = process.env.PORT || 5000;

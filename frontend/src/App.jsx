@@ -18,6 +18,7 @@ import { CartProvider } from './context/CartContext';
 import ProductPage from './pages/user/ProductPage';
 import { Toaster } from 'react-hot-toast';
 import Address from './pages/user/Address';
+import CategoryPage from './pages/user/CategoryPage';
 
 function App() {
   // Check if the current path is a seller route
@@ -55,6 +56,7 @@ function App() {
                       <Route path="/login" element={<Login />} />
                       <Route path="/product/:productId" element={<ProductPage />} />
                       <Route path="/address" element={<Address />} />
+                      <Route path="/category/:categorySlug" element={<CategoryPage />} />
                     </Routes>
                   </div>
                   <div className="fixed bottom-0 left-0 right-0">
