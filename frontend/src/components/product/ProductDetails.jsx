@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { calculateDiscount } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -13,17 +13,36 @@ const ProductDetails = ({
   quantity,
   setQuantity
 }) => {
-  const { user } = useAuth();
-  const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useCart();
-  const [isWishlisted, setIsWishlisted] = useState(
-    wishlist.some(item => item.id === product.id)
-  );
+  const { user, isAuthenticated } = useAuth();
+  const { addToCart, addToWishlist, removeFromWishlist, wishlist, loading } = useCart();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  // Update wishlist state when wishlist data changes
+  useEffect(() => {
+    if (product && wishlist) {
+      setIsWishlisted(wishlist.some(item => item.id === product.id));
+    }
+  }, [product, wishlist]);
 
   if (!product) {
     return <div>Loading...</div>;
   }
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart', {
+        position: 'top-center',
+        duration: 2000,
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '16px'
+        }
+      });
+      return;
+    }
+    
     if (!selectedSize || !selectedColor) {
       toast.error('Please select size and color', {
         position: 'top-center',
@@ -37,12 +56,14 @@ const ProductDetails = ({
       });
       return;
     }
+    
     addToCart({
       ...product,
       selectedSize,
       selectedColor,
       quantity
     });
+    
     toast.success('Added to Cart', {
       position: 'top-center',
       duration: 2000,
@@ -55,13 +76,59 @@ const ProductDetails = ({
     });
   };
 
-  const toggleWishlist = () => {
-    if (isWishlisted) {
-      removeFromWishlist(product.id);
-    } else {
-      addToWishlist(product);
+  const toggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to wishlist', {
+        position: 'top-center',
+        duration: 2000,
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '16px'
+        }
+      });
+      return;
     }
-    setIsWishlisted(!isWishlisted);
+    
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(product.id);
+        toast.success('Removed from wishlist', {
+          position: 'top-center',
+          duration: 2000,
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '10px',
+            padding: '16px'
+          }
+        });
+      } else {
+        await addToWishlist(product);
+        toast.success('Added to wishlist', {
+          position: 'top-center',
+          duration: 2000,
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '10px',
+            padding: '16px'
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Error updating wishlist', {
+        position: 'top-center',
+        duration: 2000,
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '16px'
+        }
+      });
+    }
   };
 
   return (
@@ -160,8 +227,9 @@ const ProductDetails = ({
         <button
           onClick={handleAddToCart}
           className="w-full bg-black text-white py-4 rounded-full hover:bg-gray-900 transition-colors"
+          disabled={loading}
         >
-          Add to Cart
+          {loading ? 'Loading...' : 'Add to Cart'}
         </button>
         <button
           onClick={toggleWishlist}
@@ -170,8 +238,9 @@ const ProductDetails = ({
               ? 'border-red-500 text-red-500 hover:bg-red-50'
               : 'border-gray-300 hover:border-gray-900'
             }`}
+          disabled={loading}
         >
-          {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          {loading ? 'Loading...' : (isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist')}
         </button>
       </div>
     </div>

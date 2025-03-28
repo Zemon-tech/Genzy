@@ -14,10 +14,12 @@ const CategoryPage = () => {
 
   // Format the category name for display (convert slug to title case)
   const formatCategoryName = (slug) => {
+    // Check if the original category contained hyphens that should be preserved
+    // We'll capitalize each segment independently
     return slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .join(' ');  // For display purposes, we always use spaces
   };
 
   const categoryName = formatCategoryName(categorySlug);
@@ -28,6 +30,7 @@ const CategoryPage = () => {
         setLoading(true);
         setError(null);
         
+        console.log('Fetching products for category slug:', categorySlug);
         // Use the correct API URL without /api at the beginning since it's in baseURL
         const response = await api.get(`/products?category=${categorySlug}`);
         console.log('API Response:', response);

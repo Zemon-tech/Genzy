@@ -340,27 +340,35 @@ const Home = () => {
           {/* Scrollable Categories Row - Simplified Cards */}
           <div className="overflow-x-auto hide-scrollbar">
             <div className="flex gap-3 pb-2">
-              {categories.slice(2).map((category) => (
-                <Link
-                  key={category.name}
-                  to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="group flex-shrink-0 relative block w-32 rounded-xl overflow-hidden aspect-[3/4] shadow-sm"
-                >
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60">
-                    <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                      <h3 className="text-white font-medium text-sm">
-                        {category.name}
-                      </h3>
+              {categories.slice(2).map((category) => {
+                // Properly create slug from category name
+                // If category name already has hyphens, preserve them
+                const categorySlug = category.name
+                  .toLowerCase()
+                  .replace(/\s+/g, '-'); // Replace spaces with hyphens
+                
+                return (
+                  <Link
+                    key={category.name}
+                    to={`/category/${categorySlug}`}
+                    className="group flex-shrink-0 relative block w-32 rounded-xl overflow-hidden aspect-[3/4] shadow-sm"
+                  >
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60">
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                        <h3 className="text-white font-medium text-sm">
+                          {category.name}
+                        </h3>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

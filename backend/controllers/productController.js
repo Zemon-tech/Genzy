@@ -50,17 +50,25 @@ export const getProducts = async (req, res) => {
     
     // Add category filter if provided
     if (category) {
-      // Convert URL slug format (e.g., 't-shirt') to match the database format (e.g., 'T-shirts')
-      // This assumes the categories are stored with first letter capitalized in the database
+      // First try with direct transformation (replacing hyphens with spaces)
       const formattedCategory = category
         .split('-')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
       
-      console.log('Formatted category for DB query:', formattedCategory);
+      console.log('First attempt formatted category (with spaces):', formattedCategory);
       
-      // Filter by the category column
-      query = query.eq('category', formattedCategory);
+      // Second attempt - preserve hyphens but capitalize
+      const formattedCategoryWithHyphens = category
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('-');
+      
+      console.log('Second attempt formatted category (with hyphens):', formattedCategoryWithHyphens);
+      
+      // Use a simpler approach - check for either format
+      // This approach works by using an "in" filter with an array of possible values
+      query = query.in('category', [formattedCategory, formattedCategoryWithHyphens]);
     }
     
     // Execute the query

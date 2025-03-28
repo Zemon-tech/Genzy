@@ -57,6 +57,10 @@ const Profile = () => {
               full_name: user.user_metadata?.full_name || '',
               phone_number: user.phone || '',
               address: '',
+              landmark: '',
+              city: '',
+              state: '',
+              pincode: '',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }])

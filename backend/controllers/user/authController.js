@@ -26,6 +26,13 @@ export const signup = async (req, res) => {
                     id: authData.user.id,
                     full_name,
                     email: email,
+                    address: '',
+                    landmark: '',
+                    city: '',
+                    state: '',
+                    pincode: '',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 }
             ])
             .select()

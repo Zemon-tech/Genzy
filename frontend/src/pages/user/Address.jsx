@@ -22,6 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // Form validation schema
 const formSchema = z.object({
   address: z.string().min(1, "Address is required"),
+  landmark: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   pincode: z.string().length(6, "Pincode must be 6 digits"),
@@ -42,6 +43,7 @@ const Address = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       address: "",
+      landmark: "",
       city: "",
       state: "",
       pincode: "",
@@ -78,7 +80,27 @@ const Address = () => {
           throw error;
         }
       } else if (profileData?.address) {
-        setAddresses([profileData.address]);
+        // Format address from individual fields if they exist
+        if (profileData.city || profileData.state || profileData.pincode) {
+          let formattedAddress = profileData.address;
+          
+          if (profileData.landmark) {
+            formattedAddress += `, ${profileData.landmark}`;
+          }
+          
+          if (profileData.city) {
+            formattedAddress += `, ${profileData.city}`;
+          }
+          
+          if (profileData.state && profileData.pincode) {
+            formattedAddress += `, ${profileData.state} - ${profileData.pincode}`;
+          }
+          
+          setAddresses([formattedAddress]);
+        } else {
+          // Legacy format: If only the address field exists
+          setAddresses([profileData.address]);
+        }
       } else {
         setAddresses([]);
       }
@@ -91,20 +113,61 @@ const Address = () => {
   };
 
   const handleEdit = (address) => {
-    // Parse the existing address string
-    const [streetAddress, city, stateAndPin] = address.split(', ');
-    const [state, pincode] = stateAndPin.split(' - ');
+    try {
+      // Get the user profile data to access individual fields
+      supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data: profileData, error }) => {
+          if (error) throw error;
+          
+          // If we have the individual fields in the database, use those
+          if (profileData.city && profileData.state && profileData.pincode) {
+            form.reset({
+              address: profileData.address || "",
+              landmark: profileData.landmark || "",
+              city: profileData.city || "",
+              state: profileData.state || "",
+              pincode: profileData.pincode || "",
+            });
+          } else {
+            // Legacy format: Parse the address string if individual fields aren't available
+            const parts = address.split(', ');
+            let streetAddress = parts[0];
+            let landmark = "";
+            let city, stateAndPin;
+            
+            // Check if the address has a landmark
+            if (parts.length === 4) {
+              landmark = parts[1];
+              city = parts[2];
+              stateAndPin = parts[3];
+            } else {
+              city = parts[1];
+              stateAndPin = parts[2];
+            }
+            
+            const [state, pincode] = stateAndPin.split(' - ');
 
-    // Set form values
-    form.reset({
-      address: streetAddress,
-      city,
-      state,
-      pincode,
-    });
+            // Set form values
+            form.reset({
+              address: streetAddress,
+              landmark,
+              city,
+              state,
+              pincode,
+            });
+          }
 
-    setIsEditing(true);
-    setShowForm(true);
+          setIsEditing(true);
+          setShowForm(true);
+        });
+    } catch (error) {
+      console.error('Error in handleEdit:', error);
+      toast.error('Failed to load address details');
+    }
   };
 
   const onSubmit = async (values) => {
@@ -113,7 +176,14 @@ const Address = () => {
         throw new Error('No active session. Please login again.');
       }
 
-      const formattedAddress = `${values.address}, ${values.city}, ${values.state} - ${values.pincode}`;
+      // Format the address for display purposes
+      let formattedAddress;
+      if (values.landmark && values.landmark.trim() !== '') {
+        formattedAddress = `${values.address}, ${values.landmark}, ${values.city}, ${values.state} - ${values.pincode}`;
+      } else {
+        formattedAddress = `${values.address}, ${values.city}, ${values.state} - ${values.pincode}`;
+      }
+      
       console.log('Updating address for user:', user.id);
       console.log('New address:', formattedAddress);
 
@@ -124,10 +194,14 @@ const Address = () => {
         .eq('id', user.id)
         .single();
 
-      // Prepare update data
+      // Prepare update data with individual fields
       const updateData = {
         id: user.id,
-        address: formattedAddress,
+        address: values.address,
+        landmark: values.landmark,
+        city: values.city,
+        state: values.state,
+        pincode: values.pincode,
         updated_at: new Date().toISOString(),
         full_name: existingProfile?.full_name || user.user_metadata?.full_name || 'User',
         // Add any other required fields with their existing values
@@ -146,7 +220,7 @@ const Address = () => {
       if (!data) throw new Error('Update failed - no data returned');
 
       console.log('Update successful:', data);
-      setAddresses([formattedAddress]);
+      setAddresses([formattedAddress]); // Use the formatted address for display
       toast.success(isEditing ? 'Address updated successfully' : 'Address added successfully');
       setShowForm(false);
       setIsEditing(false);
@@ -209,6 +283,20 @@ const Address = () => {
                   <FormLabel>Address</FormLabel>
                   <FormControl>
                     <Input placeholder="house/flat no, building name, street, area" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="landmark"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Landmark</FormLabel>
+                  <FormControl>
+                    <Input placeholder="nearby landmark (optional)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

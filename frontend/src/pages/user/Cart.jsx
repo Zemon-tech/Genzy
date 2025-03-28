@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Cart = () => {
   const [activeTab, setActiveTab] = useState('cart');
-  const [loading, setLoading] = useState(false);
   const { 
     cart, 
     wishlist, 
@@ -16,7 +15,8 @@ const Cart = () => {
     updateQuantity, 
     removeFromWishlist,
     moveToCart,
-    getCartTotal 
+    getCartTotal,
+    loading
   } = useCart();
 
   const CartItem = ({ item }) => (

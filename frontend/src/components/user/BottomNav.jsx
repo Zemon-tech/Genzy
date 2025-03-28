@@ -36,7 +36,7 @@ const BagWithHeart = ({ isActive, hasItems }) => (
 const BottomNav = () => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const { cartItems } = useCart();
+  const { cart, wishlist } = useCart();
   
   const navItems = [
     {
@@ -50,7 +50,20 @@ const BottomNav = () => {
       path: '/search'
     },
     {
-      icon: ShoppingBag,
+      icon: ({ className }) => {
+        const isActive = currentPath === '/cart';
+        const cartCount = cart.length;
+        return (
+          <div className="relative">
+            <ShoppingBag className={className} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </div>
+        );
+      },
       label: 'Cart',
       path: '/cart'
     },
@@ -66,6 +79,7 @@ const BottomNav = () => {
       <div className="flex items-center justify-between">
         {navItems.map((item) => {
           const isActive = currentPath === item.path;
+          const Icon = item.icon;
           return (
             <Link
               key={item.path}
@@ -79,7 +93,7 @@ const BottomNav = () => {
                     : 'text-gray-500 hover:text-black hover:bg-gray-100'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <Icon className="w-5 h-5" />
               </div>
               <span 
                 className={`text-xs mt-1 font-medium ${
