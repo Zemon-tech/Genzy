@@ -1,21 +1,26 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { useSellerAuth } from '../../context/SellerAuthContext';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
+  const { seller, loading } = useSellerAuth();
 
   useEffect(() => {
     // Check if seller is authenticated
-    const isAuth = localStorage.getItem('sellerAuth');
-    if (!isAuth) {
+    if (!loading && !seller) {
       navigate('/seller/login');
     }
-  }, [navigate]);
+  }, [navigate, seller, loading]);
 
-  // Return null while checking authentication
-  if (!localStorage.getItem('sellerAuth')) {
-    return null;
+  // Return null while checking authentication or if not authenticated
+  if (loading || !seller) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl font-medium text-gray-500">Loading...</p>
+      </div>
+    );
   }
 
   return (

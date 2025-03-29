@@ -1,5 +1,22 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import supabase from '../config/supabase';
+import PropTypes from 'prop-types';
+import { createClient } from '@supabase/supabase-js';
+
+// Get the same Supabase URL and key from the main client
+// but create a separate instance with a different storage key
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create a seller-specific Supabase client with a different storage key
+const sellerSupabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storageKey: 'sb-seller-auth-token', // Different storage key than the user auth
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    storage: localStorage
+  }
+});
 
 const API_URL = 'http://localhost:5011/api';
 
@@ -11,47 +28,104 @@ export const SellerAuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if seller is logged in on component mount
-    const loggedInSeller = localStorage.getItem('sellerAuth');
-    if (loggedInSeller) {
-      const sellerData = JSON.parse(loggedInSeller);
-      setSeller(sellerData);
-      // Set Supabase session
-      if (sellerData.session?.access_token) {
-        supabase.auth.setSession({
-          access_token: sellerData.session.access_token,
-          refresh_token: sellerData.session.refresh_token
-        });
+    const checkSellerSession = async () => {
+      try {
+        // Get current session - this uses the seller-specific storage
+        const { data: { session }, error } = await sellerSupabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking seller session:', error);
+          setSeller(null);
+          setLoading(false);
+          return;
+        }
+
+        if (!session) {
+          console.log('No seller session found');
+          setSeller(null);
+          setLoading(false);
+          return;
+        }
+
+        // Get seller data
+        const { data: sellerData, error: fetchError } = await sellerSupabase
+          .from('sellers')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+          
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching seller data:', fetchError);
+          setSeller(null);
+        } else if (sellerData) {
+          setSeller({
+            ...sellerData,
+            session: session
+          });
+        } else {
+          // User is authenticated but not a seller
+          console.log('User is authenticated but not a seller');
+          await sellerSupabase.auth.signOut(); // Sign out from seller auth
+          setSeller(null);
+        }
+      } catch (err) {
+        console.error('Error checking seller session:', err);
+        setSeller(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    checkSellerSession();
   }, []);
 
   const handleLogin = async (email, password) => {
     try {
-      // First authenticate with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      console.log('Attempting seller login for:', email);
+      
+      // First authenticate with Supabase Auth using seller instance
+      console.log('Initiating Supabase auth...');
+      const { data: authData, error: authError } = await sellerSupabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Supabase auth error:', authError);
+        throw authError;
+      }
+
+      console.log('Supabase auth successful, user ID:', authData.user.id);
+      console.log('Fetching seller data from sellers table...');
 
       // Then get seller data using business_email
-      const { data, error } = await supabase
+      const { data, error } = await sellerSupabase
         .from('sellers')
         .select('*')
-        .eq('business_email', email) // Changed from email to business_email
+        .eq('business_email', email)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching seller data:', error);
+        if (error.code === 'PGRST116') {
+          throw new Error('This account is not registered as a seller');
+        }
+        throw error;
+      }
 
-      // Make sure brand_name is included in the seller data
+      console.log('Seller data found:', data);
+
+      // The existence of the seller record in the sellers table confirms this is a seller account
       const sellerData = {
         ...data,
-        session: authData.session // Include the session data
+        session: authData.session
       };
 
-      localStorage.setItem('sellerAuth', JSON.stringify(sellerData));
+      console.log('Setting seller state with:', { 
+        id: sellerData.id, 
+        brand_name: sellerData.brand_name
+      });
+      
       setSeller(sellerData);
       return { success: true };
     } catch (error) {
@@ -64,31 +138,26 @@ export const SellerAuthProvider = ({ children }) => {
   };
 
   const signup = async (email, password, brand_name, phone_number) => {
-    try {
-      const response = await fetch(`${API_URL}/seller/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, brand_name, phone_number }),
-      });
+    const response = await fetch(`${API_URL}/seller/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, brand_name, phone_number }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
-
-      return data;
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error(data.message || 'Signup failed');
     }
+
+    return data;
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await sellerSupabase.auth.signOut();
     setSeller(null);
-    localStorage.removeItem('sellerAuth');
   };
 
   if (loading) {
@@ -100,6 +169,10 @@ export const SellerAuthProvider = ({ children }) => {
       {children}
     </SellerAuthContext.Provider>
   );
+};
+
+SellerAuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useSellerAuth = () => {

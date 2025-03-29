@@ -109,21 +109,37 @@ const EditProduct = () => {
           .replace(/\s+/g, '_'); // Replace spaces with underscore
         const fileName = `${timestamp}_${sanitizedName}`;
 
+        console.log('Uploading file with name:', fileName);
+
         const { data, error } = await supabase.storage
-          .from('product_images')
+          .from('productimages')
           .upload(fileName, file, {
             cacheControl: '3600',
-            upsert: false
+            upsert: true, // Change to true to overwrite if exists
+            contentType: file.type // Explicitly set content type
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Upload error:', error);
+          throw error;
+        }
 
-        const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product_images/${data.path}`;
+        console.log('Upload successful:', data);
+
+        // Get the public URL for the image
+        const { data: publicURLData } = supabase
+          .storage
+          .from('productimages')
+          .getPublicUrl(data.path);
+
+        console.log('Generated public URL:', publicURLData);
+
+        const imageUrl = publicURLData.publicUrl;
         newImages.push(imageUrl);
         newPreviewImages.push(URL.createObjectURL(file));
       } catch (error) {
         console.error('Error uploading image:', error);
-        setError('Error uploading image. Please try again.');
+        setError('Error uploading image: ' + (error.message || 'Unknown error'));
       }
     }
 
@@ -151,10 +167,10 @@ const EditProduct = () => {
   const deleteImagesFromStorage = async (imageUrls) => {
     for (const url of imageUrls) {
       try {
-        const path = url.split('/product_images/')[1];
+        const path = url.split('/productimages/')[1];
         if (path) {
           const { error } = await supabase.storage
-            .from('product_images')
+            .from('productimages')
             .remove([path]);
           
           if (error) {
@@ -172,15 +188,49 @@ const EditProduct = () => {
     try {
       setLoading(true);
       setError('');
+      
+      console.log('Updating product with ID:', productId);
 
-      const { error: updateError } = await supabase
+      if (!seller || !seller.id) {
+        setError('You must be logged in as a seller to update products');
+        setLoading(false);
+        return;
+      }
+
+      // Make sure seller_id is set correctly and as a string
+      const updatedData = {
+        ...formData,
+        seller_id: String(seller.id), // Ensure seller_id is a string
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Updating product with data:', {
+        id: productId,
+        sellerId: updatedData.seller_id,
+        name: updatedData.name
+      });
+
+      // Don't filter by seller_id in the query, let RLS handle that
+      const { data, error: updateError } = await supabase
         .from('products')
-        .update(formData)
-        .eq('id', productId);
+        .update(updatedData)
+        .eq('id', productId)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating product:', updateError);
+        throw updateError;
+      }
+
+      console.log('Update response:', data);
+      
+      if (!data || data.length === 0) {
+        console.error('Product not updated, possibly due to RLS or it doesn\'t exist');
+        throw new Error('Failed to update product. You may not have permission to edit this product.');
+      }
 
       if (imagesToDelete.length > 0) {
+        console.log('Deleting old images:', imagesToDelete);
         await deleteImagesFromStorage(imagesToDelete);
       }
 
@@ -188,6 +238,7 @@ const EditProduct = () => {
       setImagesToDelete([]);
       setTimeout(() => navigate('/seller/products'), 1500);
     } catch (err) {
+      console.error('Error in handleSubmit:', err);
       setError('Error updating product: ' + err.message);
     } finally {
       setLoading(false);

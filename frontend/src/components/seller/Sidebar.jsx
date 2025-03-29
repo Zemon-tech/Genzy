@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
-  const { seller } = useSellerAuth();
+  const navigate = useNavigate();
+  const { seller, logout } = useSellerAuth();
   
   useEffect(() => {
     console.log('Current seller:', seller); // Debug log
@@ -20,6 +21,11 @@ const Sidebar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/seller/login');
+  };
 
   return (
     <div className="bg-gray-800 text-white w-64 h-full flex flex-col">
@@ -45,10 +51,7 @@ const Sidebar = () => {
       </nav>
       <div className="border-t border-gray-700">
         <button
-          onClick={() => {
-            localStorage.removeItem('sellerAuth');
-            window.location.href = '/seller/login';
-          }}
+          onClick={handleLogout}
           className="flex items-center px-6 py-3 text-lg text-red-400 hover:bg-gray-700 w-full"
         >
           <span className="mr-3">🚪</span>

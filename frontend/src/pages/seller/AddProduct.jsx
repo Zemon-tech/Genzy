@@ -51,7 +51,6 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [uploadProgress, setUploadProgress] = useState(0);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -127,16 +126,14 @@ const AddProduct = () => {
           .replace(/\s+/g, '_');
         const fileName = `${timestamp}_${sanitizedName}`;
 
-        // Create FormData for proper file upload
-        const formData = new FormData();
-        formData.append('file', file);
+        console.log('Uploading file with name:', fileName);
 
         // Upload the file
         const { data, error } = await supabase.storage
           .from('productimages')
           .upload(fileName, file, {
             cacheControl: '3600',
-            upsert: false,
+            upsert: true, // Changed to true to overwrite if exists
             contentType: file.type // Explicitly set content type
           });
 
@@ -147,7 +144,15 @@ const AddProduct = () => {
 
         console.log('Upload successful:', data);
 
-        const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/productimages/${data.path}`;
+        // Get the public URL for the image
+        const { data: publicURLData } = supabase
+          .storage
+          .from('productimages')
+          .getPublicUrl(data.path);
+
+        console.log('Generated public URL:', publicURLData);
+
+        const imageUrl = publicURLData.publicUrl;
         newImages.push(imageUrl);
         newPreviewImages.push(URL.createObjectURL(file));
 
@@ -183,20 +188,39 @@ const AddProduct = () => {
     try {
       setLoading(true);
       setError('');
+      
+      console.log('Current seller:', seller);
 
+      if (!seller || !seller.id) {
+        setError('You must be logged in as a seller to add products');
+        setLoading(false);
+        return;
+      }
+
+      // Ensure seller_id is stored as a string to match auth.uid() in RLS policy
       const productData = {
         ...formData,
-        seller_id: seller.id,
+        seller_id: String(seller.id),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
+      console.log('Adding product with data:', {
+        ...productData,
+        description: productData.description.substring(0, 20) + '...' // Truncate for logging
+      });
+
       const { data, error: insertError } = await supabase
         .from('products')
-        .insert([productData]);
+        .insert([productData])
+        .select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Product insertion error:', insertError);
+        throw insertError;
+      }
 
+      console.log('Product added successfully:', data);
       setSuccess('Product added successfully!');
       setFormData({
         name: '',
@@ -216,6 +240,7 @@ const AddProduct = () => {
       });
       setPreviewImages([]);
     } catch (err) {
+      console.error('Error in handleSubmit:', err);
       setError('Error adding product: ' + err.message);
     } finally {
       setLoading(false);
