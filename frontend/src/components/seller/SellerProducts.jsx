@@ -21,20 +21,34 @@ const SellerProducts = () => {
     try {
       setIsLoading(true);
       console.log('Fetching products for seller:', seller?.id);
+      
+      if (!seller || !seller.id) {
+        console.error('No seller information available');
+        setProducts([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Clear any stale data
+      setProducts([]);
+      
+      console.log('Querying products for seller ID:', String(seller.id));
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('seller_id', seller?.id);
+        .eq('seller_id', String(seller.id))
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error fetching products:', error);
         throw error;
       }
       
-      console.log('Fetched products:', data);
+      console.log(`Fetched ${data?.length || 0} products:`, data);
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error.message);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +64,13 @@ const SellerProducts = () => {
     try {
       console.log('Starting deletion process for product:', productId);
       
-      // First get the product to access its images
+      if (!seller || !seller.id) {
+        console.error('No seller information available');
+        alert('You must be logged in as a seller to delete products');
+        return;
+      }
+      
+      // First get the product to access its images and verify ownership
       const { data: product, error: fetchError } = await supabase
         .from('products')
         .select('*')
@@ -60,6 +80,12 @@ const SellerProducts = () => {
       if (fetchError) {
         console.error('Error fetching product:', fetchError);
         throw fetchError;
+      }
+
+      // Verify this product belongs to this seller
+      if (product.seller_id !== String(seller.id)) {
+        console.error('Permission denied: This product does not belong to the current seller');
+        throw new Error('You do not have permission to delete this product');
       }
 
       console.log('Product data:', product);
@@ -88,15 +114,23 @@ const SellerProducts = () => {
       }
 
       console.log('Deleting product from database...');
-      // Delete the product from database
-      const { error: deleteError } = await supabase
+      // Delete the product from database and let Supabase RLS handle permission check
+      const { data, error: deleteError } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productId)
+        .select();
         
       if (deleteError) {
         console.error('Error deleting product from database:', deleteError);
         throw deleteError;
+      }
+
+      console.log('Delete response:', data);
+      
+      if (!data || data.length === 0) {
+        console.error('Product not deleted, possibly due to RLS or it was already deleted');
+        throw new Error('Failed to delete product. It may have been already deleted or you may not have permission.');
       }
 
       console.log('Successfully deleted product from database');
@@ -106,7 +140,7 @@ const SellerProducts = () => {
       
     } catch (error) {
       console.error('Error in handleDelete:', error);
-      alert('Failed to delete product');
+      alert('Failed to delete product: ' + error.message);
     }
   };
 
@@ -128,10 +162,23 @@ const SellerProducts = () => {
     </div>
   );
 
+  // Add a refresh function and button
+  const refreshProducts = () => {
+    fetchSellerProducts();
+  };
+
   return (
     <div className="h-screen overflow-y-auto flex-1 p-8">
       <div className="max-w-[1200px] mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Your Products</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Your Products</h1>
+          <button 
+            onClick={refreshProducts}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
+          >
+            <span className="mr-2">🔄</span> Refresh
+          </button>
+        </div>
         
         {/* Search Bar */}
         <div className="mb-8">

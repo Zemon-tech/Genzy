@@ -2,26 +2,44 @@ import supabase from '../config/supabase';
 
 export const deleteImageFromStorage = async (imageUrl) => {
   try {
-    // Extract filename from URL
-    const fileName = imageUrl.split('/').pop();
+    console.log('Attempting to delete image URL:', imageUrl);
     
-    if (!fileName) {
-      console.error('Could not extract filename from URL:', imageUrl);
-      return null;
+    // Extract filename from URL - handle both formats of URLs
+    let filePath;
+    
+    if (imageUrl.includes('/productimages/')) {
+      // Extract just the filename from the full URL path
+      filePath = imageUrl.split('/productimages/')[1];
+    } else if (imageUrl.includes('productimages')) {
+      // This is likely a Supabase storage URL with a different format
+      const url = new URL(imageUrl);
+      const pathParts = url.pathname.split('/');
+      // Look for 'productimages' in the path and get everything after it
+      for (let i = 0; i < pathParts.length; i++) {
+        if (pathParts[i] === 'productimages' && i < pathParts.length - 1) {
+          filePath = pathParts.slice(i + 1).join('/');
+          break;
+        }
+      }
+    }
+    
+    if (!filePath) {
+      console.error('Could not extract file path from URL:', imageUrl);
+      return { success: false, error: 'Invalid image URL' };
     }
 
-    console.log('Attempting to delete file:', fileName);
+    console.log('Attempting to delete file with path:', filePath);
 
     const { data, error } = await supabase.storage
-      .from('product_images')
-      .remove([fileName]);
+      .from('productimages')
+      .remove([filePath]);
 
     if (error) {
       console.error('Error deleting image:', error);
       return { success: false, error };
     }
 
-    console.log('Successfully deleted image:', fileName);
+    console.log('Successfully deleted image:', filePath);
     return { success: true, data };
   } catch (error) {
     console.error('Error in deleteImageFromStorage:', error);

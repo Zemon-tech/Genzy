@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
@@ -23,6 +22,7 @@ import CategoryPage from './pages/user/CategoryPage';
 function App() {
   // Check if the current path is a seller route
   const isSellerRoute = window.location.pathname.startsWith('/seller');
+  console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute);
 
   return (
     <AuthProvider>
