@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../config/supabase';
 import { useAuth } from './AuthContext';
 
@@ -10,105 +10,79 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
   
-  // Define fetchUserData as a memoized callback to avoid recreating it on each render
-  const fetchUserData = useCallback(async (userId) => {
-    if (!userId) {
-      setCart([]);
-      setWishlist([]);
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      console.log('Fetching cart and wishlist data for user:', userId);
-      
-      // Fetch cart items
-      const { data: cartData, error: cartError } = await supabase
-        .from('shopping_cart')
-        .select('*, product:product_id(*)')
-        .eq('user_id', userId);
-        
-      if (cartError) {
-        console.error('Error fetching cart data:', cartError);
-        throw cartError;
-      }
-      
-      console.log('Cart data fetched:', cartData?.length || 0, 'items');
-      
-      // Transform cart data to match the expected format
-      const formattedCart = cartData?.map(item => ({
-        ...item.product,
-        quantity: item.quantity,
-        selectedSize: item.size || null,
-        selectedColor: item.color || null,
-        cartItemId: item.id // Store the cart item ID for easier updates
-      })) || [];
-      
-      setCart(formattedCart);
-      
-      // Fetch wishlist items
-      const { data: wishlistData, error: wishlistError } = await supabase
-        .from('wishlist')
-        .select('*, product:product_id(*)')
-        .eq('user_id', userId);
-        
-      if (wishlistError) {
-        console.error('Error fetching wishlist data:', wishlistError);
-        throw wishlistError;
-      }
-      
-      console.log('Wishlist data fetched:', wishlistData?.length || 0, 'items');
-      
-      // Transform wishlist data
-      const formattedWishlist = wishlistData?.map(item => ({
-        ...item.product,
-        wishlistItemId: item.id // Store the wishlist item ID
-      })) || [];
-      
-      setWishlist(formattedWishlist);
-    } catch (error) {
-      console.error('Error fetching cart/wishlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  
   // Fetch cart and wishlist from Supabase when user is authenticated
   useEffect(() => {
-    // Clear the cart and wishlist when no user is available
     if (!user) {
+      // If not authenticated, clear cart and wishlist
       setCart([]);
       setWishlist([]);
       setLoading(false);
       return;
     }
     
-    // Check for a valid user ID before fetching data
-    if (user && user.id) {
-      fetchUserData(user.id);
-    }
-  }, [user, fetchUserData]);
-  
-  // Listen for auth state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing cart and wishlist');
-        setCart([]);
-        setWishlist([]);
+    const fetchUserData = async () => {
+      setLoading(true);
+      
+      try {
+        console.log('Fetching cart and wishlist data for user:', user.id);
+        
+        // Fetch cart items
+        const { data: cartData, error: cartError } = await supabase
+          .from('shopping_cart')
+          .select('*, product:product_id(*)')
+          .eq('user_id', user.id);
+          
+        if (cartError) {
+          console.error('Error fetching cart data:', cartError);
+          throw cartError;
+        }
+        
+        console.log('Cart data fetched:', cartData?.length || 0, 'items');
+        
+        // Transform cart data to match the expected format
+        const formattedCart = cartData?.map(item => ({
+          ...item.product,
+          quantity: item.quantity,
+          selectedSize: item.size || null,
+          selectedColor: item.color || null,
+          cartItemId: item.id // Store the cart item ID for easier updates
+        })) || [];
+        
+        setCart(formattedCart);
+        
+        // Fetch wishlist items
+        const { data: wishlistData, error: wishlistError } = await supabase
+          .from('wishlist')
+          .select('*, product:product_id(*)')
+          .eq('user_id', user.id);
+          
+        if (wishlistError) {
+          console.error('Error fetching wishlist data:', wishlistError);
+          throw wishlistError;
+        }
+        
+        console.log('Wishlist data fetched:', wishlistData?.length || 0, 'items');
+        
+        // Transform wishlist data
+        const formattedWishlist = wishlistData?.map(item => ({
+          ...item.product,
+          wishlistItemId: item.id // Store the wishlist item ID
+        })) || [];
+        
+        setWishlist(formattedWishlist);
+      } catch (error) {
+        console.error('Error fetching cart/wishlist:', error);
+      } finally {
+        setLoading(false);
       }
-    });
-    
-    return () => {
-      subscription?.unsubscribe();
     };
-  }, []);
+    
+    fetchUserData();
+  }, [user]);
 
   // Add to cart - now saves to Supabase
   const addToCart = async (product) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to add items to cart');
       return;
     }
@@ -177,7 +151,7 @@ export const CartProvider = ({ children }) => {
 
   // Remove from cart - now deletes from Supabase
   const removeFromCart = async (productId, size, color) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to remove items from cart');
       return;
     }
@@ -210,7 +184,7 @@ export const CartProvider = ({ children }) => {
 
   // Update quantity - now updates in Supabase
   const updateQuantity = async (productId, size, color, newQuantity) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to update cart');
       return;
     }
@@ -249,7 +223,7 @@ export const CartProvider = ({ children }) => {
 
   // Add to wishlist - now saves to Supabase
   const addToWishlist = async (product) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to add items to wishlist');
       return;
     }
@@ -283,7 +257,7 @@ export const CartProvider = ({ children }) => {
 
   // Remove from wishlist - now deletes from Supabase
   const removeFromWishlist = async (productId) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to remove items from wishlist');
       return;
     }
@@ -309,7 +283,7 @@ export const CartProvider = ({ children }) => {
 
   // Move from wishlist to cart
   const moveToCart = async (productId) => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to move items to cart');
       return;
     }
@@ -327,7 +301,7 @@ export const CartProvider = ({ children }) => {
 
   // Clear cart - now removes all items from Supabase
   const clearCart = async () => {
-    if (!user || !user.id) {
+    if (!user) {
       console.error('User must be authenticated to clear cart');
       return;
     }
@@ -351,13 +325,6 @@ export const CartProvider = ({ children }) => {
     return cart.reduce((total, item) => total + (item.selling_price * item.quantity), 0);
   };
 
-  // Force refresh cart and wishlist data
-  const refreshUserData = () => {
-    if (user && user.id) {
-      fetchUserData(user.id);
-    }
-  };
-
   return (
     <CartContext.Provider value={{
       cart,
@@ -370,8 +337,7 @@ export const CartProvider = ({ children }) => {
       removeFromWishlist,
       moveToCart,
       clearCart,
-      getCartTotal,
-      refreshUserData
+      getCartTotal
     }}>
       {children}
     </CartContext.Provider>

@@ -10,18 +10,17 @@ if (!supabaseUrl || !supabaseKey) {
 // Log the URL (without the key) for debugging
 console.log('Supabase URL being used:', supabaseUrl);
 
-// Create a single supabase client for interacting with your database
 const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
         storage: localStorage,
-        storageKey: 'sb-auth-token'
+        storageKey: 'supabase-auth',
     }
 });
 
-// Verify connection and session
+// Verify connection
 const verifyConnection = async () => {
     try {
         const { data, error } = await supabase.auth.getSession();
