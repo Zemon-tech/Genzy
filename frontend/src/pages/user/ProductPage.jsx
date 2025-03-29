@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import supabase from '../../config/supabase';
 import ProductDetails from '../../components/product/ProductDetails';
+import ProductDescription from '../../components/product/ProductDescription';
 import RelatedProducts from '../../components/product/RelatedProducts';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
@@ -16,6 +17,7 @@ const ProductPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showImageViewer, setShowImageViewer] = useState(false);
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -116,44 +118,23 @@ const ProductPage = () => {
           setSelectedColor={setSelectedColor}
           quantity={quantity}
           setQuantity={setQuantity}
+          openSizeChart={() => setIsSizeChartOpen(true)}
         />
-
-        {/* Additional Info */}
-        <div className="mt-8 space-y-6">
-          {/* Description */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium mb-2">Description</h3>
-            <p className="text-gray-600">{product.description}</p>
-          </div>
-
-          {/* Features */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium mb-2">Features</h3>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>Style Type: {product.style_type}</li>
-              <li>Material: Premium Cotton</li>
-              <li>Fit: Regular</li>
-            </ul>
-          </div>
-
-          {/* Delivery */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium mb-2">Delivery & Returns</h3>
-            <div className="space-y-2 text-gray-600">
-              <p>• Free shipping on orders above ₹999</p>
-              <p>• Estimated delivery: {product.estimated_delivery}</p>
-              <p>• {product.return_policy}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Related Products */}
-        <div className="py-16">
-          <h2 className="text-2xl font-bold mb-8">Complete the Look</h2>
-          <RelatedProducts 
-            category={product.category}
-            currentProductId={productId}
+        
+        {/* Product Description Tabs */}
+        <div className="mt-12">
+          <ProductDescription 
+            product={product} 
+            isChartOpen={isSizeChartOpen}
+            setIsChartOpen={setIsSizeChartOpen}
           />
+        </div>
+      </div>
+      
+      {/* Related Products */}
+      <div className="mt-16 bg-gray-50 py-12">
+        <div className="max-w-2xl mx-auto px-4">
+          <RelatedProducts category={product.category} currentProductId={product.id} />
         </div>
       </div>
     </div>

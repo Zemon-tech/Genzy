@@ -13,6 +13,7 @@ import { AuthProvider } from './context/AuthContext';
 import { SellerAuthProvider } from './context/SellerAuthContext';
 import SellerProducts from './components/seller/SellerProducts';
 import EditProduct from './pages/seller/EditProduct';
+import SizeChart from './pages/seller/SizeChart';
 import { CartProvider } from './context/CartContext';
 import ProductPage from './pages/user/ProductPage';
 import { Toaster } from 'react-hot-toast';
@@ -40,6 +41,7 @@ function App() {
                   <Route path="products" element={<SellerProducts />} />
                   <Route path="add-product" element={<AddProduct />} />
                   <Route path="edit-product/:productId" element={<EditProduct />} />
+                  <Route path="size-chart" element={<SizeChart />} />
                   {/* Add other seller routes here */}
                 </Route>
               </Routes>

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProductDescription = ({ product }) => {
+const ProductDescription = ({ product, isChartOpen, setIsChartOpen }) => {
   const [activeTab, setActiveTab] = useState('description');
-  const [isChartOpen, setIsChartOpen] = useState(false);
 
   const tabs = [
     { id: 'description', label: 'Description' },
@@ -107,18 +106,61 @@ const ProductDescription = ({ product }) => {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
-              className="bg-white rounded-lg p-6 max-w-2xl w-full"
+              className="bg-white rounded-lg p-5 w-full max-w-[90%] sm:max-w-[420px] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Size Chart</h3>
-                <button onClick={() => setIsChartOpen(false)}>✕</button>
+                <button 
+                  onClick={() => setIsChartOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
               </div>
-              {/* Add your size chart content here */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  {/* Add your size chart table content */}
-                </table>
+              
+              {/* Size Chart Images */}
+              <div className="overflow-y-auto max-h-[70vh]">
+                {product.sellers?.size_chart_image1_url || 
+                 product.sellers?.size_chart_image2_url || 
+                 product.sellers?.size_chart_image3_url ? (
+                  <div className="space-y-4">
+                    {product.sellers.size_chart_image1_url && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={product.sellers.size_chart_image1_url} 
+                          alt="Size Chart 1" 
+                          className="max-w-full h-auto"
+                        />
+                      </div>
+                    )}
+                    
+                    {product.sellers.size_chart_image2_url && (
+                      <div className="flex justify-center mt-4">
+                        <img 
+                          src={product.sellers.size_chart_image2_url} 
+                          alt="Size Chart 2" 
+                          className="max-w-full h-auto"
+                        />
+                      </div>
+                    )}
+                    
+                    {product.sellers.size_chart_image3_url && (
+                      <div className="flex justify-center mt-4">
+                        <img 
+                          src={product.sellers.size_chart_image3_url} 
+                          alt="Size Chart 3" 
+                          className="max-w-full h-auto"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No size chart available for this product.</p>
+                    <p className="text-sm text-gray-400 mt-2">Please contact the seller for sizing information.</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

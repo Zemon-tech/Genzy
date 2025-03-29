@@ -256,7 +256,7 @@ const Address = () => {
       </div>
 
       {/* Add/Edit Address Button */}
-      {!showForm && (
+      {!showForm && addresses.length === 0 && (
         <Button
           onClick={() => {
             setShowForm(true);

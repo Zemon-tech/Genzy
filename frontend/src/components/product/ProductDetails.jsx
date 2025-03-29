@@ -11,7 +11,8 @@ const ProductDetails = ({
   selectedColor,
   setSelectedColor,
   quantity,
-  setQuantity
+  setQuantity,
+  openSizeChart
 }) => {
   const { user, isAuthenticated } = useAuth();
   const { addToCart, addToWishlist, removeFromWishlist, wishlist, loading } = useCart();
@@ -157,7 +158,10 @@ const ProductDetails = ({
       {/* Size Guide */}
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-medium text-gray-900">Select Size</h3>
-        <button className="text-sm text-indigo-600 hover:text-indigo-700">
+        <button 
+          className="text-sm text-indigo-600 hover:text-indigo-700"
+          onClick={openSizeChart}
+        >
           Size Guide
         </button>
       </div>
