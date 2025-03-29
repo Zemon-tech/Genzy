@@ -8,9 +8,7 @@ import ProfileSection from '../../components/user/ProfileSection';
 import {
   ShoppingBag,
   Heart,
-  User,
   MapPin,
-  Settings,
   LogOut
 } from 'lucide-react';
 
@@ -118,67 +116,63 @@ const Profile = () => {
       onClick: () => navigate('/wishlist')
     },
     {
-      icon: User,
-      label: 'Manage Account',
-      onClick: () => navigate('/account')
-    },
-    {
       icon: MapPin,
       label: 'Manage Addresses',
       onClick: () => navigate('/address')
-    },
-    {
-      icon: Settings,
-      label: 'Settings',
-      onClick: () => navigate('/settings')
     }
   ];
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="h-screen bg-gray-50 overflow-hidden">
+      <div className="max-w-[480px] mx-auto bg-white h-screen flex flex-col">
         {/* Profile Header */}
-        <div className="flex flex-col items-center pt-8 pb-6 px-4 border-b">
+        <div className="flex items-center p-6 border-b">
           {loading ? (
-            <>
-              <Skeleton className="h-20 w-20 rounded-full" />
-              <Skeleton className="h-6 w-32 mt-4" />
-              <Skeleton className="h-4 w-48 mt-2" />
-            </>
+            <div className="flex items-center w-full">
+              <Skeleton className="h-16 w-16 rounded-full flex-shrink-0" />
+              <div className="ml-4 flex-1">
+                <Skeleton className="h-5 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
           ) : (
             <>
-              <Avatar className="h-20 w-20">
+              <Avatar className="h-16 w-16 flex-shrink-0">
                 <AvatarImage src={user.user_metadata?.avatar_url} />
                 <AvatarFallback>
                   {getInitials(userProfile?.full_name || user.email)}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="mt-4 text-xl font-semibold">
-                {userProfile?.full_name || 'User'}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {userProfile?.phone_number || user.email}
-              </p>
-              {error && (
-                <p className="text-sm text-red-500 mt-2">
-                  Error loading profile: {error}
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold">
+                  {userProfile?.full_name || 'User'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {userProfile?.phone_number || user.email}
                 </p>
-              )}
+                {error && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Error loading profile: {error}
+                  </p>
+                )}
+              </div>
             </>
           )}
         </div>
 
         {/* Navigation Sections */}
-        <div className="p-4 space-y-2">
+        <div className="p-6 flex-1">
           {loading ? (
-            // Loading skeletons for sections
-            Array(5).fill(0).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-lg" />
-            ))
+            // Loading skeletons for sections in a grid
+            <div className="grid grid-cols-2 gap-4">
+              {Array(4).fill(0).map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-lg" />
+              ))}
+            </div>
           ) : (
-            <>
+            <div className="grid grid-cols-2 gap-4">
               {sections.map((section) => (
                 <ProfileSection
                   key={section.label}
@@ -193,9 +187,9 @@ const Profile = () => {
                 icon={LogOut}
                 label="Logout"
                 onClick={handleLogout}
-                className="text-red-600 hover:bg-red-50"
+                className="text-red-600 hover:bg-red-50 border-red-100"
               />
-            </>
+            </div>
           )}
         </div>
       </div>
