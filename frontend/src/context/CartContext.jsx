@@ -8,6 +8,7 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeWishlistItem, setActiveWishlistItem] = useState(null);
   const { user, isAuthenticated } = useAuth();
   
   // Fetch cart and wishlist from Supabase when user is authenticated
@@ -281,8 +282,8 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Move from wishlist to cart
-  const moveToCart = async (productId) => {
+  // Move from wishlist to cart - updated to handle size and color selection
+  const moveToCart = async (productId, options = null) => {
     if (!user) {
       console.error('User must be authenticated to move items to cart');
       return;
@@ -292,11 +293,26 @@ export const CartProvider = ({ children }) => {
     
     if (!wishlistItem) return;
     
-    // Add to cart first
-    await addToCart(wishlistItem);
-    
-    // Then remove from wishlist
-    await removeFromWishlist(productId);
+    // If options (size and color) are provided, add to cart with those options
+    if (options && options.size && options.color) {
+      await addToCart({
+        ...wishlistItem,
+        selectedSize: options.size,
+        selectedColor: options.color,
+        quantity: 1
+      });
+      
+      // Then remove from wishlist
+      await removeFromWishlist(productId);
+    } else {
+      // If no options, set the active wishlist item for selection modal
+      setActiveWishlistItem(wishlistItem);
+    }
+  };
+
+  // Function to clear the active wishlist item
+  const clearActiveWishlistItem = () => {
+    setActiveWishlistItem(null);
   };
 
   // Clear cart - now removes all items from Supabase
@@ -337,7 +353,9 @@ export const CartProvider = ({ children }) => {
       removeFromWishlist,
       moveToCart,
       clearCart,
-      getCartTotal
+      getCartTotal,
+      activeWishlistItem,
+      clearActiveWishlistItem
     }}>
       {children}
     </CartContext.Provider>

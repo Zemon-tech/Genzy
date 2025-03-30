@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ShoppingBag, Heart, Trash2, Plus, Minus, MoveRight, ShoppingBasket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SizeColorSelectionModal from '../../components/product/SizeColorSelectionModal';
 
 const Cart = () => {
   const [activeTab, setActiveTab] = useState('cart');
@@ -16,8 +17,17 @@ const Cart = () => {
     removeFromWishlist,
     moveToCart,
     getCartTotal,
-    loading
+    loading,
+    activeWishlistItem,
+    clearActiveWishlistItem
   } = useCart();
+
+  // Handle size and color selection confirm
+  const handleSelectionConfirm = (options) => {
+    if (activeWishlistItem && options) {
+      moveToCart(activeWishlistItem.id, options);
+    }
+  };
 
   const CartItem = ({ item }) => (
     <motion.div
@@ -190,7 +200,7 @@ const Cart = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-md mx-auto px-4 py-4">
@@ -290,6 +300,18 @@ const Cart = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Size and Color Selection Modal */}
+      <AnimatePresence>
+        {activeWishlistItem && (
+          <SizeColorSelectionModal
+            isOpen={!!activeWishlistItem}
+            onClose={clearActiveWishlistItem}
+            product={activeWishlistItem}
+            onConfirm={handleSelectionConfirm}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

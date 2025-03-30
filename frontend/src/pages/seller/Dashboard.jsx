@@ -1,7 +1,15 @@
+import { useState, useEffect } from 'react';
+import supabase from '../../config/supabase';
+import { useSellerAuth } from '../../context/SellerAuthContext';
+
 const Dashboard = () => {
+  const { seller } = useSellerAuth();
+  const [productCount, setProductCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Sample data (in a real app, this would come from an API)
   const stats = [
-    { label: 'Total Products', value: '24', icon: '📦' },
+    { label: 'Total Products', value: isLoading ? '...' : productCount.toString(), icon: '📦' },
     { label: 'Pending Orders', value: '12', icon: '🔄' },
     { label: 'Completed Orders', value: '48', icon: '✅' },
     { label: 'Total Revenue', value: '₹24,000', icon: '💰' },
@@ -12,6 +20,42 @@ const Dashboard = () => {
     { id: 'ORD002', customer: 'Jane Smith', product: 'Red Hoodie', status: 'Processing' },
     { id: 'ORD003', customer: 'Mike Johnson', product: 'Black Jeans', status: 'Shipped' },
   ];
+
+  useEffect(() => {
+    if (seller) {
+      fetchProductCount();
+    }
+  }, [seller]);
+
+  const fetchProductCount = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!seller || !seller.id) {
+        console.error('No seller information available');
+        setProductCount(0);
+        setIsLoading(false);
+        return;
+      }
+      
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('seller_id', String(seller.id));
+
+      if (error) {
+        console.error('Error fetching product count:', error);
+        throw error;
+      }
+      
+      setProductCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching product count:', error.message);
+      setProductCount(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="h-full w-full p-8">
