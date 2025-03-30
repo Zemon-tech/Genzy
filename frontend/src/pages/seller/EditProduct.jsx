@@ -35,6 +35,12 @@ const EditProduct = () => {
   const [success, setSuccess] = useState('');
   const [previewImages, setPreviewImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [sizeChartImages, setSizeChartImages] = useState({
+    image1: null,
+    image2: null,
+    image3: null
+  });
+  const [loadingSizeCharts, setLoadingSizeCharts] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +56,7 @@ const EditProduct = () => {
     estimated_delivery: '',
     return_policy: '',
     images: [],
+    size_chart: '',
   });
 
   useEffect(() => {
@@ -76,6 +83,36 @@ const EditProduct = () => {
       fetchProduct();
     }
   }, [productId]);
+
+  // Fetch size chart images for this seller
+  useEffect(() => {
+    const fetchSizeChartImages = async () => {
+      if (!seller) return;
+      
+      try {
+        setLoadingSizeCharts(true);
+        const { data, error } = await supabase
+          .from('sellers')
+          .select('size_chart_image1_url, size_chart_image2_url, size_chart_image3_url')
+          .eq('id', seller.id)
+          .single();
+        
+        if (error) throw error;
+        
+        setSizeChartImages({
+          image1: data.size_chart_image1_url || null,
+          image2: data.size_chart_image2_url || null,
+          image3: data.size_chart_image3_url || null
+        });
+      } catch (error) {
+        console.error('Error fetching size chart images:', error);
+      } finally {
+        setLoadingSizeCharts(false);
+      }
+    };
+    
+    fetchSizeChartImages();
+  }, [seller]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -504,6 +541,64 @@ const EditProduct = () => {
                     file:bg-indigo-50 file:text-indigo-700
                     hover:file:bg-indigo-100"
                 />
+              </div>
+            </div>
+
+            {/* Size Chart Selection */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Size Chart</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select a Size Chart for this Product
+                </label>
+                {loadingSizeCharts ? (
+                  <div className="h-10 w-full bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <select
+                      name="size_chart"
+                      value={formData.size_chart || ''}
+                      onChange={handleChange}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">No Size Chart</option>
+                      {sizeChartImages.image1 && (
+                        <option value={sizeChartImages.image1}>Size Chart 1</option>
+                      )}
+                      {sizeChartImages.image2 && (
+                        <option value={sizeChartImages.image2}>Size Chart 2</option>
+                      )}
+                      {sizeChartImages.image3 && (
+                        <option value={sizeChartImages.image3}>Size Chart 3</option>
+                      )}
+                    </select>
+                    
+                    {Object.values(sizeChartImages).every(chart => chart === null) && (
+                      <p className="mt-2 text-sm text-amber-600">
+                        You haven't uploaded any size charts yet. 
+                        <button 
+                          type="button"
+                          onClick={() => navigate('/seller/size-chart')}
+                          className="ml-1 text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          Manage Size Charts
+                        </button>
+                      </p>
+                    )}
+                    
+                    {/* Preview selected size chart */}
+                    {formData.size_chart && (
+                      <div className="mt-3 border rounded-md p-3">
+                        <p className="text-sm font-medium mb-2">Selected Size Chart Preview:</p>
+                        <img 
+                          src={formData.size_chart} 
+                          alt="Selected Size Chart"
+                          className="max-h-48 mx-auto"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSellerAuth } from '../../context/SellerAuthContext';
+import { useNavigate } from 'react-router-dom';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
 
@@ -48,9 +49,16 @@ const RETURN_POLICIES = [
 
 const AddProduct = () => {
   const { seller } = useSellerAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [sizeChartImages, setSizeChartImages] = useState({
+    image1: null,
+    image2: null,
+    image3: null
+  });
+  const [loadingSizeCharts, setLoadingSizeCharts] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -67,9 +75,40 @@ const AddProduct = () => {
     return_policy: '',
     images: [],
     gender: 'unisex',
+    size_chart: '',
   });
 
   const [previewImages, setPreviewImages] = useState([]);
+
+  // Fetch size chart images for this seller
+  useEffect(() => {
+    const fetchSizeChartImages = async () => {
+      if (!seller) return;
+      
+      try {
+        setLoadingSizeCharts(true);
+        const { data, error } = await supabase
+          .from('sellers')
+          .select('size_chart_image1_url, size_chart_image2_url, size_chart_image3_url')
+          .eq('id', seller.id)
+          .single();
+        
+        if (error) throw error;
+        
+        setSizeChartImages({
+          image1: data.size_chart_image1_url || null,
+          image2: data.size_chart_image2_url || null,
+          image3: data.size_chart_image3_url || null
+        });
+      } catch (error) {
+        console.error('Error fetching size chart images:', error);
+      } finally {
+        setLoadingSizeCharts(false);
+      }
+    };
+    
+    fetchSizeChartImages();
+  }, [seller]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -222,29 +261,34 @@ const AddProduct = () => {
 
       console.log('Product added successfully:', data);
       setSuccess('Product added successfully!');
-      setFormData({
-        name: '',
-        description: '',
-        mrp: '',
-        selling_price: '',
-        category: '',
-        sizes: [],
-        colors: [],
-        stock_quantity: '',
-        style_type: '',
-        shipping_charges: '',
-        estimated_delivery: '',
-        return_policy: '',
-        images: [],
-        gender: 'unisex',
-      });
-      setPreviewImages([]);
+      resetForm();
     } catch (err) {
       console.error('Error in handleSubmit:', err);
       setError('Error adding product: ' + err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      mrp: '',
+      selling_price: '',
+      category: '',
+      sizes: [],
+      colors: [],
+      stock_quantity: '',
+      style_type: '',
+      shipping_charges: '',
+      estimated_delivery: '',
+      return_policy: '',
+      images: [],
+      gender: 'unisex',
+      size_chart: '',
+    });
+    setPreviewImages([]);
   };
 
   return (
@@ -452,6 +496,64 @@ const AddProduct = () => {
                     <option value="female">Female</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            {/* Size Chart Selection */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Size Chart</h2>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select a Size Chart for this Product
+                </label>
+                {loadingSizeCharts ? (
+                  <div className="h-10 w-full bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <select
+                      name="size_chart"
+                      value={formData.size_chart || ''}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    >
+                      <option value="">No Size Chart</option>
+                      {sizeChartImages.image1 && (
+                        <option value={sizeChartImages.image1}>Size Chart 1</option>
+                      )}
+                      {sizeChartImages.image2 && (
+                        <option value={sizeChartImages.image2}>Size Chart 2</option>
+                      )}
+                      {sizeChartImages.image3 && (
+                        <option value={sizeChartImages.image3}>Size Chart 3</option>
+                      )}
+                    </select>
+                    
+                    {Object.values(sizeChartImages).every(chart => chart === null) && (
+                      <p className="mt-2 text-sm text-amber-600">
+                        You haven't uploaded any size charts yet. 
+                        <button 
+                          type="button"
+                          onClick={() => navigate('/seller/size-chart')}
+                          className="ml-1 text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          Manage Size Charts
+                        </button>
+                      </p>
+                    )}
+                    
+                    {/* Preview selected size chart */}
+                    {formData.size_chart && (
+                      <div className="mt-3 border rounded-md p-3">
+                        <p className="text-sm font-medium mb-2">Selected Size Chart Preview:</p>
+                        <img 
+                          src={formData.size_chart} 
+                          alt="Selected Size Chart"
+                          className="max-h-48 mx-auto"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 

@@ -121,44 +121,58 @@ const ProductDescription = ({ product, isChartOpen, setIsChartOpen }) => {
               
               {/* Size Chart Images */}
               <div className="overflow-y-auto max-h-[70vh]">
-                {product.sellers?.size_chart_image1_url || 
-                 product.sellers?.size_chart_image2_url || 
-                 product.sellers?.size_chart_image3_url ? (
+                {product.size_chart ? (
                   <div className="space-y-4">
-                    {product.sellers.size_chart_image1_url && (
-                      <div className="flex justify-center">
-                        <img 
-                          src={product.sellers.size_chart_image1_url} 
-                          alt="Size Chart 1" 
-                          className="max-w-full h-auto"
-                        />
-                      </div>
-                    )}
-                    
-                    {product.sellers.size_chart_image2_url && (
-                      <div className="flex justify-center mt-4">
-                        <img 
-                          src={product.sellers.size_chart_image2_url} 
-                          alt="Size Chart 2" 
-                          className="max-w-full h-auto"
-                        />
-                      </div>
-                    )}
-                    
-                    {product.sellers.size_chart_image3_url && (
-                      <div className="flex justify-center mt-4">
-                        <img 
-                          src={product.sellers.size_chart_image3_url} 
-                          alt="Size Chart 3" 
-                          className="max-w-full h-auto"
-                        />
-                      </div>
-                    )}
+                    <div className="flex justify-center">
+                      <img 
+                        src={product.size_chart} 
+                        alt="Product Size Chart" 
+                        className="max-w-full h-auto"
+                      />
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No size chart available for this product.</p>
-                    <p className="text-sm text-gray-400 mt-2">Please contact the seller for sizing information.</p>
+                  <div className="space-y-4">
+                    {product.sellers?.size_chart_image1_url || 
+                     product.sellers?.size_chart_image2_url || 
+                     product.sellers?.size_chart_image3_url ? (
+                      <div className="space-y-4">
+                        {product.sellers.size_chart_image1_url && (
+                          <div className="flex justify-center">
+                            <img 
+                              src={product.sellers.size_chart_image1_url} 
+                              alt="Size Chart 1" 
+                              className="max-w-full h-auto"
+                            />
+                          </div>
+                        )}
+                        
+                        {product.sellers.size_chart_image2_url && (
+                          <div className="flex justify-center mt-4">
+                            <img 
+                              src={product.sellers.size_chart_image2_url} 
+                              alt="Size Chart 2" 
+                              className="max-w-full h-auto"
+                            />
+                          </div>
+                        )}
+                        
+                        {product.sellers.size_chart_image3_url && (
+                          <div className="flex justify-center mt-4">
+                            <img 
+                              src={product.sellers.size_chart_image3_url} 
+                              alt="Size Chart 3" 
+                              className="max-w-full h-auto"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No size chart available for this product.</p>
+                        <p className="text-sm text-gray-400 mt-2">Please contact the seller for sizing information.</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
