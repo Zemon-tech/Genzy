@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../config/supabase';
 import { useAuth } from './AuthContext';
+import PropTypes from 'prop-types';
 
 const CartContext = createContext(null);
 
@@ -9,7 +10,10 @@ export const CartProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeWishlistItem, setActiveWishlistItem] = useState(null);
-  const { user, isAuthenticated } = useAuth();
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const { user } = useAuth();
   
   // Fetch cart and wishlist from Supabase when user is authenticated
   useEffect(() => {
@@ -145,6 +149,11 @@ export const CartProvider = ({ children }) => {
           }
         ]);
       }
+
+      // Re-validate coupon after cart changes
+      if (appliedCoupon) {
+        validateCoupon(appliedCoupon.code);
+      }
     } catch (error) {
       console.error('Error adding to cart:', error);
     }
@@ -178,6 +187,11 @@ export const CartProvider = ({ children }) => {
       setCart(prevCart =>
         prevCart.filter(item => item.cartItemId !== itemToRemove.cartItemId)
       );
+
+      // Re-validate coupon after cart changes
+      if (appliedCoupon) {
+        validateCoupon(appliedCoupon.code);
+      }
     } catch (error) {
       console.error('Error removing from cart:', error);
     }
@@ -217,6 +231,11 @@ export const CartProvider = ({ children }) => {
             : item
         )
       );
+
+      // Re-validate coupon after cart changes
+      if (appliedCoupon) {
+        validateCoupon(appliedCoupon.code);
+      }
     } catch (error) {
       console.error('Error updating quantity:', error);
     }
@@ -337,8 +356,211 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Coupon functions
+  const applyCoupon = async (code) => {
+    setCouponLoading(true);
+    setCouponError(null);
+    
+    try {
+      const result = await validateCoupon(code);
+      return result;
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      setCouponError(error.message || 'Failed to apply coupon');
+      setAppliedCoupon(null);
+      return { success: false, error: error.message };
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const validateCoupon = async (code) => {
+    if (!code || !user) {
+      setCouponError('Invalid coupon code');
+      setAppliedCoupon(null);
+      return { success: false, error: 'Invalid coupon code' };
+    }
+
+    try {
+      // Fetch coupon from database
+      const { data: couponData, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', code.toUpperCase())
+        .single();
+
+      if (error || !couponData) {
+        setCouponError('Coupon not found');
+        setAppliedCoupon(null);
+        return { success: false, error: 'Coupon not found' };
+      }
+
+      // Check if coupon is expired
+      const now = new Date();
+      const expiryDate = new Date(couponData.expiry_date);
+      
+      if (expiryDate < now) {
+        setCouponError('Coupon has expired');
+        setAppliedCoupon(null);
+        return { success: false, error: 'Coupon has expired' };
+      }
+
+      // Check if coupon is valid for current cart
+      if (couponData.brand_id) {
+        // Brand-specific coupon
+        const validItems = cart.filter(item => item.seller_id === couponData.brand_id);
+        
+        if (validItems.length === 0) {
+          setCouponError(`This coupon is only valid for ${couponData.brand_name || 'specific'} brand products`);
+          setAppliedCoupon(null);
+          return { 
+            success: false, 
+            error: `This coupon is only valid for ${couponData.brand_name || 'specific'} brand products` 
+          };
+        }
+      }
+
+      // Check minimum order value
+      const cartTotal = getCartTotal();
+      if (couponData.min_order_value && cartTotal < couponData.min_order_value) {
+        setCouponError(`Minimum order value of ₹${couponData.min_order_value} required for this coupon`);
+        setAppliedCoupon(null);
+        return { 
+          success: false, 
+          error: `Minimum order value of ₹${couponData.min_order_value} required for this coupon` 
+        };
+      }
+
+      // All validations passed, apply coupon
+      setAppliedCoupon(couponData);
+      setCouponError(null);
+      return { success: true, coupon: couponData };
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      setCouponError('Error validating coupon');
+      setAppliedCoupon(null);
+      return { success: false, error: 'Error validating coupon' };
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  };
+
+  // Calculate coupon discount
+  const getCouponDiscount = () => {
+    if (!appliedCoupon) return 0;
+    
+    let applicableTotal = getCartTotal();
+    
+    // For brand-specific coupons, only apply to eligible items
+    if (appliedCoupon.brand_id) {
+      applicableTotal = cart
+        .filter(item => item.seller_id === appliedCoupon.brand_id)
+        .reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
+    }
+    
+    if (appliedCoupon.discount_type === 'percentage') {
+      // Percentage discount
+      const discount = (applicableTotal * appliedCoupon.discount_value) / 100;
+      
+      // Apply max discount cap if exists
+      if (appliedCoupon.max_discount && discount > appliedCoupon.max_discount) {
+        return appliedCoupon.max_discount;
+      }
+      
+      return Math.round(discount);
+    } else {
+      // Fixed amount discount
+      return Math.min(appliedCoupon.discount_value, applicableTotal);
+    }
+  };
+
   const getCartTotal = () => {
     return cart.reduce((total, item) => total + (item.selling_price * item.quantity), 0);
+  };
+
+  // Calculate the total MRP (before discount)
+  const getCartMRP = () => {
+    return cart.reduce((total, item) => total + (item.mrp * item.quantity), 0);
+  };
+
+  // Calculate total savings (MRP - selling price)
+  const getTotalSavings = () => {
+    return cart.reduce((total, item) => {
+      const itemSaving = (item.mrp - item.selling_price) * item.quantity;
+      return total + (itemSaving > 0 ? itemSaving : 0);
+    }, 0);
+  };
+
+  // New function to calculate shipping fees based on seller/brand
+  const getShippingFee = () => {
+    // Group products by seller_id
+    const sellerGroups = {};
+    
+    cart.forEach(item => {
+      const sellerId = item.seller_id;
+      if (!sellerGroups[sellerId]) {
+        sellerGroups[sellerId] = [];
+      }
+      sellerGroups[sellerId].push(item);
+    });
+    
+    // Calculate max shipping fee for each seller's products
+    let totalShippingFee = 0;
+    
+    Object.values(sellerGroups).forEach(sellerItems => {
+      // Find the max shipping charge for this seller's products
+      const maxShippingCharge = Math.max(
+        ...sellerItems.map(item => Number(item.shipping_charges || 0))
+      );
+      
+      totalShippingFee += maxShippingCharge;
+    });
+    
+    return totalShippingFee;
+  };
+
+  // Get maximum delivery time from all products in cart
+  const getMaxDeliveryTime = () => {
+    if (cart.length === 0) return null;
+    
+    const deliveryTimes = cart.map(item => Number(item.delivery_time || 0));
+    return Math.max(...deliveryTimes);
+  };
+
+  // Calculate final amount (subtotal + shipping - coupon discount)
+  const getFinalAmount = () => {
+    const subtotal = getCartTotal();
+    const shipping = getShippingFee();
+    const couponDiscount = getCouponDiscount();
+    
+    return Math.max(0, subtotal + shipping - couponDiscount);
+  };
+
+  // Calculate percentage saved
+  const getSavingsPercentage = () => {
+    const mrpTotal = getCartMRP();
+    const savings = getTotalSavings();
+    return mrpTotal > 0 ? Math.round((savings / mrpTotal) * 100) : 0;
+  };
+
+  // Get full price breakdown
+  const getPriceBreakdown = () => {
+    const couponDiscount = getCouponDiscount();
+    
+    return {
+      subtotal: getCartTotal(),
+      mrpTotal: getCartMRP(),
+      savings: getTotalSavings(),
+      savingsPercentage: getSavingsPercentage(),
+      shippingFee: getShippingFee(),
+      couponDiscount,
+      couponCode: appliedCoupon?.code,
+      total: getFinalAmount(),
+      maxDeliveryTime: getMaxDeliveryTime()
+    };
   };
 
   return (
@@ -354,12 +576,29 @@ export const CartProvider = ({ children }) => {
       moveToCart,
       clearCart,
       getCartTotal,
+      getCartMRP,
+      getTotalSavings,
+      getShippingFee,
+      getMaxDeliveryTime,
+      getFinalAmount,
+      getSavingsPercentage,
+      getPriceBreakdown,
+      applyCoupon,
+      removeCoupon,
+      appliedCoupon,
+      couponError,
+      couponLoading,
+      getCouponDiscount,
       activeWishlistItem,
       clearActiveWishlistItem
     }}>
       {children}
     </CartContext.Provider>
   );
+};
+
+CartProvider.propTypes = {
+  children: PropTypes.node.isRequired
 };
 
 export const useCart = () => {

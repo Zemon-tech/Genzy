@@ -20,6 +20,10 @@ import ProductPage from './pages/user/ProductPage';
 import { Toaster } from 'react-hot-toast';
 import Address from './pages/user/Address';
 import CategoryPage from './pages/user/CategoryPage';
+import Checkout from './pages/user/Checkout';
+import OrderSuccess from './pages/user/OrderSuccess';
+import Orders from './pages/seller/Orders';
+import MyOrders from './pages/user/MyOrders';
 
 function App() {
   // Check if the current path is a seller route
@@ -27,10 +31,10 @@ function App() {
   console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute);
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <SellerAuthProvider>
-          <Router>
+    <Router>
+      <AuthProvider>
+        <CartProvider>
+          <SellerAuthProvider>
             <Toaster />
             {isSellerRoute ? (
               // Seller Routes with full-width layout
@@ -43,6 +47,7 @@ function App() {
                   <Route path="add-product" element={<AddProduct />} />
                   <Route path="edit-product/:productId" element={<EditProduct />} />
                   <Route path="size-chart" element={<SizeChart />} />
+                  <Route path="orders" element={<Orders />} />
                   {/* Add other seller routes here */}
                 </Route>
               </Routes>
@@ -61,6 +66,9 @@ function App() {
                       <Route path="/product/:productId" element={<ProductPage />} />
                       <Route path="/address" element={<Address />} />
                       <Route path="/category/:categorySlug" element={<CategoryPage />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+                      <Route path="/orders" element={<MyOrders />} />
                     </Routes>
                   </div>
                   <div className="fixed bottom-0 left-0 right-0">
@@ -71,10 +79,10 @@ function App() {
                 </div>
               </div>
             )}
-          </Router>
-        </SellerAuthProvider>
-      </CartProvider>
-    </AuthProvider>
+          </SellerAuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

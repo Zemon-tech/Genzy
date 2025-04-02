@@ -160,12 +160,109 @@ export const SellerAuthProvider = ({ children }) => {
     setSeller(null);
   };
 
+  // Fetch orders for the seller
+  const fetchSellerOrders = async (status = 'pending') => {
+    try {
+      if (!seller) {
+        throw new Error('No seller authenticated');
+      }
+
+      // Fetch orders that have items from this seller
+      const { data, error } = await sellerSupabase
+        .from('order_items')
+        .select(`
+          *,
+          order:order_id(*),
+          product:product_id(*)
+        `)
+        .eq('seller_id', seller.id)
+        .eq('item_status', status)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      throw error;
+    }
+  };
+
+  // Update order item status
+  const updateOrderItemStatus = async (orderItemId, newStatus, trackingNumber = null) => {
+    try {
+      if (!seller) {
+        throw new Error('No seller authenticated');
+      }
+
+      // Verify the order item belongs to this seller
+      const { data: orderItem, error: verifyError } = await sellerSupabase
+        .from('order_items')
+        .select('*')
+        .eq('id', orderItemId)
+        .eq('seller_id', seller.id)
+        .single();
+
+      if (verifyError || !orderItem) {
+        throw new Error('Order item not found or not authorized');
+      }
+
+      // Update the order item status
+      const updates = {
+        item_status: newStatus
+      };
+
+      // If tracking number is provided, update it in the order
+      if (trackingNumber && newStatus === 'shipped') {
+        const { error: orderError } = await sellerSupabase
+          .from('orders')
+          .update({ 
+            tracking_number: trackingNumber,
+            status: 'shipped' // Also update the main order status
+          })
+          .eq('id', orderItem.order_id);
+
+        if (orderError) {
+          throw orderError;
+        }
+      }
+
+      const { data, error } = await sellerSupabase
+        .from('order_items')
+        .update(updates)
+        .eq('id', orderItemId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error updating order item status:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return null; // or a loading spinner
   }
 
   return (
-    <SellerAuthContext.Provider value={{ seller, handleLogin, logout, signup }}>
+    <SellerAuthContext.Provider
+      value={{
+        seller,
+        loading,
+        handleLogin,
+        logout,
+        signup,
+        fetchSellerOrders,
+        updateOrderItemStatus
+      }}
+    >
       {children}
     </SellerAuthContext.Provider>
   );
