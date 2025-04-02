@@ -29,8 +29,6 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       
       try {
-        console.log('Fetching cart and wishlist data for user:', user.id);
-        
         // Fetch cart items
         const { data: cartData, error: cartError } = await supabase
           .from('shopping_cart')
@@ -41,8 +39,6 @@ export const CartProvider = ({ children }) => {
           console.error('Error fetching cart data:', cartError);
           throw cartError;
         }
-        
-        console.log('Cart data fetched:', cartData?.length || 0, 'items');
         
         // Transform cart data to match the expected format
         const formattedCart = cartData?.map(item => ({
@@ -65,8 +61,6 @@ export const CartProvider = ({ children }) => {
           console.error('Error fetching wishlist data:', wishlistError);
           throw wishlistError;
         }
-        
-        console.log('Wishlist data fetched:', wishlistData?.length || 0, 'items');
         
         // Transform wishlist data
         const formattedWishlist = wishlistData?.map(item => ({

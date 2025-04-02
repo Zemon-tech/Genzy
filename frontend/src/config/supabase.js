@@ -7,9 +7,6 @@ if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase credentials. Please check your .env file.');
 }
 
-// Log the URL (without the key) for debugging
-console.log('Supabase URL being used:', supabaseUrl);
-
 const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true,
@@ -26,8 +23,6 @@ const verifyConnection = async () => {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
             console.error('Supabase connection error:', error);
-        } else {
-            console.log('Supabase connection verified successfully', data);
         }
     } catch (err) {
         console.error('Failed to verify Supabase connection:', err);

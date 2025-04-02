@@ -276,8 +276,7 @@ const Checkout = () => {
       // Generate transaction ID for COD
       const transactionId = generateTransactionId();
       
-      // Bypass RLS issues by using a procedure that runs with SECURITY DEFINER
-      // by passing all order data in a single call
+      // Use the updated place_complete_order function with SECURITY DEFINER
       const { data, error } = await supabase.rpc('place_complete_order', {
         p_user_id: user.id,
         p_total_amount: priceBreakdown.total,

@@ -41,7 +41,6 @@ export const SellerAuthProvider = ({ children }) => {
         }
 
         if (!session) {
-          console.log('No seller session found');
           setSeller(null);
           setLoading(false);
           return;
@@ -64,7 +63,6 @@ export const SellerAuthProvider = ({ children }) => {
           });
         } else {
           // User is authenticated but not a seller
-          console.log('User is authenticated but not a seller');
           await sellerSupabase.auth.signOut(); // Sign out from seller auth
           setSeller(null);
         }
@@ -81,10 +79,7 @@ export const SellerAuthProvider = ({ children }) => {
 
   const handleLogin = async (email, password) => {
     try {
-      console.log('Attempting seller login for:', email);
-      
       // First authenticate with Supabase Auth using seller instance
-      console.log('Initiating Supabase auth...');
       const { data: authData, error: authError } = await sellerSupabase.auth.signInWithPassword({
         email,
         password
@@ -94,9 +89,6 @@ export const SellerAuthProvider = ({ children }) => {
         console.error('Supabase auth error:', authError);
         throw authError;
       }
-
-      console.log('Supabase auth successful, user ID:', authData.user.id);
-      console.log('Fetching seller data from sellers table...');
 
       // Then get seller data using business_email
       const { data, error } = await sellerSupabase
@@ -113,18 +105,11 @@ export const SellerAuthProvider = ({ children }) => {
         throw error;
       }
 
-      console.log('Seller data found:', data);
-
       // The existence of the seller record in the sellers table confirms this is a seller account
       const sellerData = {
         ...data,
         session: authData.session
       };
-
-      console.log('Setting seller state with:', { 
-        id: sellerData.id, 
-        brand_name: sellerData.brand_name
-      });
       
       setSeller(sellerData);
       return { success: true };
@@ -200,7 +185,7 @@ export const SellerAuthProvider = ({ children }) => {
       // Verify the order item belongs to this seller
       const { data: orderItem, error: verifyError } = await sellerSupabase
         .from('order_items')
-        .select('*')
+        .select('*, order:order_id(*)')
         .eq('id', orderItemId)
         .eq('seller_id', seller.id)
         .single();
@@ -209,38 +194,35 @@ export const SellerAuthProvider = ({ children }) => {
         throw new Error('Order item not found or not authorized');
       }
 
-      // Update the order item status
-      const updates = {
-        item_status: newStatus
-      };
-
       // If tracking number is provided, update it in the order
       if (trackingNumber && newStatus === 'shipped') {
         const { error: orderError } = await sellerSupabase
           .from('orders')
           .update({ 
-            tracking_number: trackingNumber,
-            status: 'shipped' // Also update the main order status
+            tracking_number: trackingNumber
           })
           .eq('id', orderItem.order_id);
 
         if (orderError) {
+          console.error('Error updating order:', orderError);
           throw orderError;
         }
       }
 
-      const { data, error } = await sellerSupabase
-        .from('order_items')
-        .update(updates)
-        .eq('id', orderItemId)
-        .select()
-        .single();
+      // Use the improved function that updates both order and items status
+      const { data: statusData, error: statusError } = await sellerSupabase
+        .rpc('update_order_and_items_status', { 
+          p_order_id: orderItem.order_id, 
+          p_status: newStatus,
+          p_seller_id: seller.id
+        });
 
-      if (error) {
-        throw error;
+      if (statusError) {
+        console.error('Error updating order status:', statusError);
+        throw statusError;
       }
 
-      return data;
+      return { success: true };
     } catch (error) {
       console.error('Error updating order item status:', error);
       throw error;

@@ -33,7 +33,7 @@ const OrderSuccess = () => {
     try {
       setLoading(true);
       
-      // Fetch order details
+      // Directly query the orders table (now with fixed RLS policies)
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('*')
@@ -47,7 +47,7 @@ const OrderSuccess = () => {
       
       setOrder(orderData);
       
-      // Fetch order items with product details
+      // Directly query the order_items table (with fixed RLS policies)
       const { data: itemsData, error: itemsError } = await supabase
         .from('order_items')
         .select('*, product:product_id(*)')
