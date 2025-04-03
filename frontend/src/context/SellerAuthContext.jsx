@@ -28,54 +28,179 @@ export const SellerAuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if seller is logged in on component mount
-    const checkSellerSession = async () => {
-      try {
-        // Get current session - this uses the seller-specific storage
-        const { data: { session }, error } = await sellerSupabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error checking seller session:', error);
-          setSeller(null);
-          setLoading(false);
-          return;
-        }
-
-        if (!session) {
-          setSeller(null);
-          setLoading(false);
-          return;
-        }
-
-        // Get seller data
-        const { data: sellerData, error: fetchError } = await sellerSupabase
-          .from('sellers')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-          
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error('Error fetching seller data:', fetchError);
-          setSeller(null);
-        } else if (sellerData) {
-          setSeller({
-            ...sellerData,
-            session: session
-          });
-        } else {
-          // User is authenticated but not a seller
-          await sellerSupabase.auth.signOut(); // Sign out from seller auth
-          setSeller(null);
-        }
-      } catch (err) {
-        console.error('Error checking seller session:', err);
-        setSeller(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     checkSellerSession();
   }, []);
+
+  const checkSellerSession = async () => {
+    try {
+      setLoading(true);
+      // Get current session - this uses the seller-specific storage
+      const { data: { session }, error } = await sellerSupabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error checking seller session:', error);
+        setSeller(null);
+        return;
+      }
+
+      if (!session) {
+        setSeller(null);
+        return;
+      }
+
+      // Get seller data
+      await fetchAndSetSellerData(session);
+    } catch (err) {
+      console.error('Error checking seller session:', err);
+      setSeller(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to fetch seller data and update state
+  const fetchAndSetSellerData = async (session) => {
+    try {
+      if (!session) return;
+      
+      console.log('Fetching seller data for user ID:', session.user.id);
+      
+      const { data: sellerData, error: fetchError } = await sellerSupabase
+        .from('sellers')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+        
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching seller data:', fetchError);
+        setSeller(null);
+      } else if (sellerData) {
+        console.log('Successfully fetched seller data');
+        setSeller({
+          ...sellerData,
+          session: session
+        });
+      } else {
+        // User is authenticated but not a seller
+        console.warn('User is authenticated but not a seller');
+        await sellerSupabase.auth.signOut(); // Sign out from seller auth
+        setSeller(null);
+      }
+    } catch (error) {
+      console.error('Error in fetchAndSetSellerData:', error);
+      setSeller(null);
+    }
+  };
+
+  // Function to refresh seller data from the database
+  const refreshSellerData = async () => {
+    try {
+      if (!seller || !seller.session) {
+        console.warn('Cannot refresh: No active seller session');
+        return { success: false, error: 'No active session' };
+      }
+      
+      // Don't set loading to true for refresh operations
+      // as it causes UI flicker
+      await fetchAndSetSellerData(seller.session);
+      return { success: true };
+    } catch (error) {
+      console.error('Error refreshing seller data:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Dedicated function to update size chart images
+  const updateSizeChartImages = async (imageUrls) => {
+    try {
+      if (!seller || !seller.id) {
+        console.error('No seller authenticated');
+        return { success: false, error: 'No seller authenticated' };
+      }
+
+      console.log('SellerAuthContext: Updating size chart images for seller ID:', seller.id);
+      console.log('SellerAuthContext: Image URLs to update:', imageUrls);
+      
+      // Extract only the URL fields we need to update
+      const updateData = {
+        size_chart_image1_url: imageUrls.image1,
+        size_chart_image2_url: imageUrls.image2,
+        size_chart_image3_url: imageUrls.image3
+      };
+      
+      // Use the sellerSupabase client with auth
+      const { data, error } = await sellerSupabase
+        .from('sellers')
+        .update(updateData)
+        .eq('id', seller.id)
+        .select();
+      
+      if (error) {
+        console.error('SellerAuthContext: Error updating size chart images:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('SellerAuthContext: Successfully updated size chart images:', data);
+      
+      // Update the seller data without triggering loading state
+      if (data && data.length > 0) {
+        setSeller({
+          ...seller,
+          ...data[0]
+        });
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      console.error('SellerAuthContext: Error in updateSizeChartImages:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Single-field update for size chart images
+  const updateSingleSizeChartImage = async (imageKey, imageUrl) => {
+    try {
+      if (!seller || !seller.id) {
+        console.error('No seller authenticated');
+        return { success: false, error: 'No seller authenticated' };
+      }
+
+      const fieldName = `size_chart_image${imageKey.slice(-1)}_url`;
+      console.log(`SellerAuthContext: Updating ${fieldName} for seller ID:`, seller.id);
+      console.log('SellerAuthContext: Image URL to update:', imageUrl);
+      
+      // Create update object with only the single field
+      const updateData = {};
+      updateData[fieldName] = imageUrl;
+      
+      // Use the sellerSupabase client with auth
+      const { data, error } = await sellerSupabase
+        .from('sellers')
+        .update(updateData)
+        .eq('id', seller.id)
+        .select();
+      
+      if (error) {
+        console.error('SellerAuthContext: Error updating size chart image:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('SellerAuthContext: Successfully updated size chart image:', data);
+      
+      // Update the seller data without triggering loading state
+      if (data && data.length > 0) {
+        setSeller({
+          ...seller,
+          ...data[0]
+        });
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      console.error('SellerAuthContext: Error in updateSingleSizeChartImage:', error);
+      return { success: false, error: error.message };
+    }
+  };
 
   const handleLogin = async (email, password) => {
     try {
@@ -210,7 +335,7 @@ export const SellerAuthProvider = ({ children }) => {
       }
 
       // Use the improved function that updates both order and items status
-      const { data: statusData, error: statusError } = await sellerSupabase
+      const { error: statusError } = await sellerSupabase
         .rpc('update_order_and_items_status', { 
           p_order_id: orderItem.order_id, 
           p_status: newStatus,
@@ -242,7 +367,10 @@ export const SellerAuthProvider = ({ children }) => {
         logout,
         signup,
         fetchSellerOrders,
-        updateOrderItemStatus
+        updateOrderItemStatus,
+        refreshSellerData,
+        updateSizeChartImages,
+        updateSingleSizeChartImage
       }}
     >
       {children}

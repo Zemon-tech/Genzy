@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 const SizeChart = () => {
   const navigate = useNavigate();
-  const { seller } = useSellerAuth();
+  const { seller, updateSizeChartImages, updateSingleSizeChartImage } = useSellerAuth();
   const [images, setImages] = useState([]);
   const [imageUrls, setImageUrls] = useState({
     image1: null,
@@ -15,8 +15,11 @@ const SizeChart = () => {
     image3: null
   });
   const [dragActive, setDragActive] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // We'll keep separate loading states for different actions to prevent full UI flicker
+  const [isUploadLoading, setIsUploadLoading] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [loadingImageKeys, setLoadingImageKeys] = useState([]); // Track which specific images are being processed
   
   // Fetch existing size chart images on component mount
   useEffect(() => {
@@ -25,32 +28,54 @@ const SizeChart = () => {
       return;
     }
     
-    const fetchImages = async () => {
-      try {
-        setIsLoadingImages(true);
-        const { data, error } = await supabase
-          .from('sellers')
-          .select('size_chart_image1_url, size_chart_image2_url, size_chart_image3_url')
-          .eq('id', seller.id)
-          .single();
-        
-        if (error) throw error;
-        
-        setImageUrls({
-          image1: data.size_chart_image1_url || null,
-          image2: data.size_chart_image2_url || null,
-          image3: data.size_chart_image3_url || null
-        });
-      } catch (error) {
-        console.error('Error fetching size chart images:', error);
-        toast.error('Failed to load existing size charts');
-      } finally {
-        setIsLoadingImages(false);
-      }
-    };
-    
     fetchImages();
   }, [seller, navigate]);
+
+  // Also update local state when seller data changes (from context updates)
+  useEffect(() => {
+    if (seller && !isLoadingImages) {
+      updateLocalImageState();
+    }
+  }, [seller]);
+  
+  // Update local image state directly from seller data
+  const updateLocalImageState = () => {
+    if (!seller) return;
+    
+    setImageUrls({
+      image1: seller.size_chart_image1_url || null,
+      image2: seller.size_chart_image2_url || null,
+      image3: seller.size_chart_image3_url || null
+    });
+  };
+  
+  const fetchImages = async () => {
+    try {
+      setIsLoadingImages(true);
+      console.log('Fetching size chart images for seller ID:', seller.id);
+      
+      const { data, error } = await supabase
+        .from('sellers')
+        .select('size_chart_image1_url, size_chart_image2_url, size_chart_image3_url')
+        .eq('id', seller.id)
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('Fetched size chart data:', data);
+      
+      setImageUrls({
+        image1: data.size_chart_image1_url || null,
+        image2: data.size_chart_image2_url || null,
+        image3: data.size_chart_image3_url || null
+      });
+    } catch (error) {
+      console.error('Error fetching size chart images:', error);
+      toast.error('Failed to load existing size charts');
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
   
   const handleDrag = (e) => {
     e.preventDefault();
@@ -134,7 +159,7 @@ const SizeChart = () => {
       return;
     }
     
-    setIsLoading(true);
+    setIsUploadLoading(true);
     
     try {
       // Start with current image URLs
@@ -153,40 +178,59 @@ const SizeChart = () => {
         if (slots.length < images.length && !slots.includes('image3')) slots.unshift('image3');
       }
       
+      console.log('Uploading images to slots:', slots);
+      
       // Upload each image and assign to available slots
       for (let i = 0; i < images.length; i++) {
         const slot = slots[i];
         if (!slot) break; // This shouldn't happen due to our validation
         
+        // Mark this image as loading
+        setLoadingImageKeys(prev => [...prev, slot]);
+        
         const result = await uploadSizeChartImage(images[i], seller.brand_name);
+        
+        // Remove from loading state
+        setLoadingImageKeys(prev => prev.filter(key => key !== slot));
         
         if (!result.success) {
           throw new Error(result.error || 'Failed to upload image');
         }
         
         newImageUrls[slot] = result.url;
+        console.log(`Uploaded image to ${slot}:`, result.url);
+        
+        // Immediately update UI with the new URL
+        setImageUrls(prev => ({
+          ...prev,
+          [slot]: result.url
+        }));
       }
       
-      // Update seller record with the new image URLs
-      const { error } = await supabase
-        .from('sellers')
-        .update({
-          size_chart_image1_url: newImageUrls.image1,
-          size_chart_image2_url: newImageUrls.image2,
-          size_chart_image3_url: newImageUrls.image3
-        })
-        .eq('id', seller.id);
+      console.log('Updating seller record with new image URLs:', newImageUrls);
+      console.log('Seller ID:', seller.id);
       
-      if (error) throw error;
+      // Use the context method to update the database
+      console.log('Using dedicated context method to update all size chart images');
+      const updateResult = await updateSizeChartImages(newImageUrls);
       
-      setImageUrls(newImageUrls);
-      setImages([]);
-      toast.success('Size chart images uploaded successfully');
+      if (!updateResult.success) {
+        console.error('Error using context method:', updateResult.error);
+        toast.error('Failed to save image URLs to database');
+      } else {
+        console.log('Success with context method!');
+        // We've already updated the UI optimistically, no need to fetch again
+        setImages([]);
+        toast.success('Size chart images uploaded successfully');
+      }
     } catch (error) {
       console.error('Error uploading size chart images:', error);
       toast.error('Failed to upload size chart images');
+      // Refresh to ensure UI is in sync with database
+      await fetchImages();
     } finally {
-      setIsLoading(false);
+      setIsUploadLoading(false);
+      setLoadingImageKeys([]);
     }
   };
   
@@ -206,45 +250,65 @@ const SizeChart = () => {
       return;
     }
     
-    setIsLoading(true);
+    // Only set this particular image as loading
+    setLoadingImageKeys(prev => [...prev, imageKey]);
+    setIsDeleteLoading(true);
     
     try {
+      const imageUrl = imageUrls[imageKey];
+      console.log(`Deleting image ${imageKey}:`, imageUrl);
+      
+      // Optimistically update UI first
+      setImageUrls(prev => ({
+        ...prev,
+        [imageKey]: null
+      }));
+      
       // Delete from Supabase storage
-      const result = await deleteSizeChartImage(imageUrls[imageKey]);
+      const result = await deleteSizeChartImage(imageUrl);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete image');
       }
       
-      // Update the seller record to remove the image URL
-      const updateData = {};
-      updateData[`size_chart_image${imageKey.slice(-1)}_url`] = null;
+      console.log('Successfully deleted image from storage');
       
-      const { error } = await supabase
-        .from('sellers')
-        .update(updateData)
-        .eq('id', seller.id);
+      // Use the context method to update database
+      console.log('Using dedicated context method to update single size chart image');
+      const updateResult = await updateSingleSizeChartImage(imageKey, null);
       
-      if (error) throw error;
-      
-      // Update local state
-      const newImageUrls = { ...imageUrls };
-      newImageUrls[imageKey] = null;
-      setImageUrls(newImageUrls);
-      
-      toast.success('Size chart image deleted successfully');
+      if (!updateResult.success) {
+        console.error('Error using context method:', updateResult.error);
+        toast.error('Failed to update database after deletion');
+        // Revert optimistic update on error
+        setImageUrls(prev => ({
+          ...prev,
+          [imageKey]: imageUrl
+        }));
+      } else {
+        console.log('Success with context method!');
+        toast.success('Size chart image deleted successfully');
+      }
     } catch (error) {
       console.error('Error deleting size chart image:', error);
       toast.error('Failed to delete size chart image');
+      // Refresh to ensure UI is in sync with database
+      await fetchImages();
     } finally {
-      setIsLoading(false);
+      setIsDeleteLoading(false);
+      setLoadingImageKeys(prev => prev.filter(key => key !== imageKey));
     }
   };
   
   // Helper function to check if uploads are disabled
   const isUploadDisabled = () => {
     const existingCount = countExistingImages();
-    return existingCount >= 3;
+    return existingCount >= 3 || isUploadLoading;
+  };
+  
+  // Check if a specific image is in loading state
+  const isImageLoading = (imageKey) => {
+    return loadingImageKeys.includes(imageKey);
   };
   
   return (
@@ -270,19 +334,24 @@ const SizeChart = () => {
                       <img 
                         src={imageUrls[imageKey]} 
                         alt={`Size Chart ${num}`}
-                        className="h-full object-contain"
+                        className={`h-full object-contain ${isImageLoading(imageKey) ? 'opacity-50' : ''}`}
                       />
                     ) : (
                       <p className="text-gray-400">No image uploaded</p>
+                    )}
+                    {isImageLoading(imageKey) && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                      </div>
                     )}
                   </div>
                   {imageUrls[imageKey] && (
                     <button
                       onClick={() => deleteExistingImage(imageKey)}
-                      disabled={isLoading}
+                      disabled={isDeleteLoading || isImageLoading(imageKey)}
                       className="text-red-500 hover:text-red-700 mt-2 disabled:opacity-50"
                     >
-                      Delete Image
+                      {isImageLoading(imageKey) ? 'Deleting...' : 'Delete Image'}
                     </button>
                   )}
                 </div>
@@ -296,7 +365,7 @@ const SizeChart = () => {
       <form onSubmit={handleSubmit}>
         <h2 className="text-xl font-medium mb-4">Upload New Size Charts</h2>
         
-        {isUploadDisabled() && (
+        {isUploadDisabled() && !isUploadLoading && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700">
             <p>You already have 3 size chart images. Please delete existing images to upload new ones.</p>
           </div>
@@ -327,7 +396,7 @@ const SizeChart = () => {
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={handleFileChange}
-                disabled={isLoading || isUploadDisabled()}
+                disabled={isUploadDisabled()}
               />
             </label>
           </div>
@@ -367,10 +436,18 @@ const SizeChart = () => {
         <div className="mt-6">
           <button
             type="submit"
-            disabled={isLoading || images.length === 0 || isUploadDisabled()}
+            disabled={isUploadLoading || images.length === 0 || isUploadDisabled()}
             className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Uploading...' : 'Upload Size Charts'}
+            {isUploadLoading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading...
+              </span>
+            ) : 'Upload Size Charts'}
           </button>
         </div>
       </form>

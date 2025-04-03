@@ -53,7 +53,7 @@ export const uploadSizeChartImage = async (file, brandName) => {
       throw new Error('File and brand name are required');
     }
     
-    // Generate a unique file name
+    // Generate a unique file name with timestamp to avoid cache issues
     const timestamp = new Date().getTime();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
@@ -62,14 +62,20 @@ export const uploadSizeChartImage = async (file, brandName) => {
     // Create the path with the brand name folder
     const filePath = `${brandName}/${fileName}`;
     
-    console.log('Uploading size chart image to:', filePath);
+    // The bucket name in SQL is exactly 'sizechart' - make sure we use this precise name
+    const bucketName = 'sizechart';
     
-    // Upload to Supabase
+    // Log the bucket name being used
+    console.log('Using bucket:', bucketName);
+    console.log('Uploading size chart image to path:', filePath);
+    
+    // Upload to Supabase with cache control and forced upsert
     const { data, error } = await supabase.storage
-      .from('sizechart')
+      .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type
       });
     
     if (error) {
@@ -77,10 +83,17 @@ export const uploadSizeChartImage = async (file, brandName) => {
       throw error;
     }
     
+    console.log('Successfully uploaded file to storage:', data?.path);
+    
     // Get the public URL
     const { data: publicUrlData } = supabase.storage
-      .from('sizechart')
+      .from(bucketName)
       .getPublicUrl(filePath);
+    
+    console.log('Generated public URL:', publicUrlData?.publicUrl);
+    
+    // Log the URL that will be saved to the sellers table
+    console.log('URL to save in database:', publicUrlData.publicUrl);
     
     return { 
       success: true, 
@@ -98,24 +111,37 @@ export const uploadSizeChartImage = async (file, brandName) => {
 
 export const deleteSizeChartImage = async (imageUrl) => {
   try {
+    if (!imageUrl) {
+      console.error('Cannot delete: Image URL is null or empty');
+      return { success: false, error: 'Image URL is required' };
+    }
+    
     console.log('Attempting to delete size chart image URL:', imageUrl);
+    
+    // The bucket name in SQL is exactly 'sizechart' - make sure we use this precise name
+    const bucketName = 'sizechart';
     
     // Extract file path from URL
     let filePath;
     
-    if (imageUrl.includes('/sizechart/')) {
+    if (imageUrl.includes(`/${bucketName}/`)) {
       // Extract just the filename from the full URL path
-      filePath = imageUrl.split('/sizechart/')[1];
-    } else if (imageUrl.includes('sizechart')) {
+      filePath = imageUrl.split(`/${bucketName}/`)[1];
+    } else if (imageUrl.includes(bucketName)) {
       // This is likely a Supabase storage URL with a different format
-      const url = new URL(imageUrl);
-      const pathParts = url.pathname.split('/');
-      // Look for 'sizechart' in the path and get everything after it
-      for (let i = 0; i < pathParts.length; i++) {
-        if (pathParts[i] === 'sizechart' && i < pathParts.length - 1) {
-          filePath = pathParts.slice(i + 1).join('/');
-          break;
+      try {
+        const url = new URL(imageUrl);
+        const pathParts = url.pathname.split('/');
+        // Look for 'sizechart' in the path and get everything after it
+        for (let i = 0; i < pathParts.length; i++) {
+          if (pathParts[i] === bucketName && i < pathParts.length - 1) {
+            filePath = pathParts.slice(i + 1).join('/');
+            break;
+          }
         }
+      } catch (urlError) {
+        console.error('Error parsing URL:', urlError);
+        throw new Error('Invalid image URL format');
       }
     }
     
@@ -126,16 +152,17 @@ export const deleteSizeChartImage = async (imageUrl) => {
 
     console.log('Attempting to delete size chart file with path:', filePath);
 
+    // Use a forceful delete operation
     const { data, error } = await supabase.storage
-      .from('sizechart')
+      .from(bucketName)
       .remove([filePath]);
 
     if (error) {
-      console.error('Error deleting size chart image:', error);
+      console.error('Error deleting size chart image from storage:', error);
       return { success: false, error };
     }
 
-    console.log('Successfully deleted size chart image:', filePath);
+    console.log('Successfully deleted size chart image from storage:', filePath);
     return { success: true, data };
   } catch (error) {
     console.error('Error in deleteSizeChartImage:', error);
