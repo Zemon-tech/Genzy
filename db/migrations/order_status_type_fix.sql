@@ -1,6 +1,6 @@
--- Migration to fix order status synchronization issues
+-- Migration to fix order_status type mismatch issue
 
--- Create a function to update both order status and order item statuses
+-- Update the function to properly cast p_status to order_status when updating order_items
 CREATE OR REPLACE FUNCTION update_order_and_items_status(p_order_id UUID, p_status TEXT, p_seller_id UUID DEFAULT NULL)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
