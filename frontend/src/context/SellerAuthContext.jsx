@@ -110,6 +110,46 @@ export const SellerAuthProvider = ({ children }) => {
     }
   };
 
+  // Function to update seller profile details
+  const updateSellerProfile = async (profileData) => {
+    try {
+      if (!seller || !seller.id) {
+        console.error('No seller authenticated');
+        return { success: false, error: 'No seller authenticated' };
+      }
+
+      console.log('SellerAuthContext: Updating profile for seller ID:', seller.id);
+      console.log('SellerAuthContext: Profile data to update:', profileData);
+      
+      // Use the sellerSupabase client with auth
+      const { data, error } = await sellerSupabase
+        .from('sellers')
+        .update(profileData)
+        .eq('id', seller.id)
+        .select();
+      
+      if (error) {
+        console.error('SellerAuthContext: Error updating seller profile:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('SellerAuthContext: Successfully updated seller profile:', data);
+      
+      // Update the seller data without triggering loading state
+      if (data && data.length > 0) {
+        setSeller({
+          ...seller,
+          ...data[0]
+        });
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      console.error('SellerAuthContext: Error in updateSellerProfile:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   // Dedicated function to update size chart images
   const updateSizeChartImages = async (imageUrls) => {
     try {
@@ -391,7 +431,8 @@ export const SellerAuthProvider = ({ children }) => {
         updateOrderItemStatus,
         refreshSellerData,
         updateSizeChartImages,
-        updateSingleSizeChartImage
+        updateSingleSizeChartImage,
+        updateSellerProfile
       }}
     >
       {children}
