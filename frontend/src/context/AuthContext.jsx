@@ -110,6 +110,62 @@ export const AuthProvider = ({ children }) => {
                 throw error;
             }
         },
+        signup: async (email, password, full_name) => {
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email.trim().toLowerCase(),
+                    password,
+                    options: {
+                        data: {
+                            full_name
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.error('Signup error:', error);
+                    throw error;
+                }
+
+                // Check if a profile already exists
+                const { data: existingProfile } = await supabase
+                    .from('user_profiles')
+                    .select('id')
+                    .eq('id', data.user.id)
+                    .maybeSingle();
+
+                // Only create a profile if one doesn't exist yet
+                if (!existingProfile) {
+                    const { error: profileError } = await supabase
+                        .from('user_profiles')
+                        .insert([
+                            {
+                                id: data.user.id,
+                                full_name,
+                                email: email.trim().toLowerCase(),
+                                address: '',
+                                landmark: '',
+                                city: '',
+                                state: '',
+                                pincode: '',
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            }
+                        ]);
+
+                    if (profileError) {
+                        console.error('Profile creation error:', profileError);
+                        // Don't throw here - the auth user is created successfully
+                        // Just log the error and continue
+                    }
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Signup process error:', error);
+                throw error;
+            }
+        },
         logout: async () => {
             try {
                 await supabase.auth.signOut();
