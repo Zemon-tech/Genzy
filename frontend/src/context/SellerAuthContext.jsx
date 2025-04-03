@@ -282,7 +282,17 @@ export const SellerAuthProvider = ({ children }) => {
         .from('order_items')
         .select(`
           *,
-          order:order_id(*),
+          order:order_id(
+            id, 
+            created_at, 
+            shipping_address, 
+            phone_number, 
+            tracking_number, 
+            payment_method,
+            total_amount,
+            estimated_delivery_date,
+            actual_delivery_date
+          ),
           product:product_id(*)
         `)
         .eq('seller_id', seller.id)
@@ -319,13 +329,24 @@ export const SellerAuthProvider = ({ children }) => {
         throw new Error('Order item not found or not authorized');
       }
 
+      // Updates to apply to the order
+      const orderUpdates = {};
+      
       // If tracking number is provided, update it in the order
       if (trackingNumber && newStatus === 'shipped') {
+        orderUpdates.tracking_number = trackingNumber;
+      }
+      
+      // If marking as delivered, set the actual delivery date
+      if (newStatus === 'delivered') {
+        orderUpdates.actual_delivery_date = new Date().toISOString();
+      }
+      
+      // Only update the order if we have changes to make
+      if (Object.keys(orderUpdates).length > 0) {
         const { error: orderError } = await sellerSupabase
           .from('orders')
-          .update({ 
-            tracking_number: trackingNumber
-          })
+          .update(orderUpdates)
           .eq('id', orderItem.order_id);
 
         if (orderError) {

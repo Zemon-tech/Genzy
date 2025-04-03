@@ -300,6 +300,12 @@ const Orders = () => {
                   <div className="mt-4 pt-4 border-t text-sm">
                     <div className="font-medium">Shipping Address:</div>
                     <p className="text-gray-600">{order.shipping_address}</p>
+                    {order.phone_number && (
+                      <div className="mt-2">
+                        <div className="font-medium">Phone Number:</div>
+                        <p className="text-gray-600">{order.phone_number}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import supabase from '../../config/supabase';
-import { ArrowLeft, CreditCard, Truck, Package, Tag, MapPin, Plus, Check, Clock, Calendar, X, AlertCircle, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, Package, Tag, MapPin, Plus, Check, Clock, Calendar, X, AlertCircle, Info, ShieldCheck, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import PropTypes from 'prop-types';
@@ -39,6 +39,10 @@ const OrderConfirmation = ({ isVisible, onConfirm, onCancel, orderDetails }) => 
             <div className="flex justify-between">
               <span className="text-gray-600">Payment Method:</span>
               <span className="font-medium">Cash on Delivery</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Delivery Phone:</span>
+              <span className="font-medium">{orderDetails.phoneNumber}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Total Amount:</span>
@@ -85,7 +89,8 @@ OrderConfirmation.propTypes = {
   orderDetails: PropTypes.shape({
     itemCount: PropTypes.number.isRequired,
     total: PropTypes.number.isRequired,
-    couponCode: PropTypes.string
+    couponCode: PropTypes.string,
+    phoneNumber: PropTypes.string.isRequired
   }).isRequired
 };
 
@@ -111,6 +116,10 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [savedPhoneNumber, setSavedPhoneNumber] = useState('');
+  const [useSavedPhone, setUseSavedPhone] = useState(true);
+  const [shouldSavePhone, setShouldSavePhone] = useState(false);
   
   // Redirect to cart if cart is empty
   useEffect(() => {
@@ -158,6 +167,16 @@ const Checkout = () => {
             raw: profileData
           }]);
           setSelectedAddress('primary');
+          
+          // Set phone number state if available in profile
+          if (profileData.phone_number) {
+            setSavedPhoneNumber(profileData.phone_number);
+            setPhoneNumber(profileData.phone_number);
+            setUseSavedPhone(true);
+          } else {
+            setSavedPhoneNumber('');
+            setUseSavedPhone(false);
+          }
         } else {
           setAddresses([]);
         }
@@ -257,8 +276,67 @@ const Checkout = () => {
       return;
     }
     
+    // Validate phone number
+    const deliveryPhone = useSavedPhone ? savedPhoneNumber : phoneNumber;
+    if (!deliveryPhone) {
+      toast.error('Please provide a valid phone number for delivery');
+      return;
+    }
+    
+    if (!/^\d{10}$/.test(deliveryPhone)) {
+      toast.error('Please enter a valid 10-digit phone number');
+      return;
+    }
+    
     // Show the confirmation modal
     setShowConfirmation(true);
+  };
+  
+  // Handle phone number changes
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^\d{0,10}$/.test(value)) {
+      setPhoneNumber(value);
+    }
+  };
+  
+  // Toggle between saved and custom phone number
+  const toggleUseSavedPhone = () => {
+    setUseSavedPhone(!useSavedPhone);
+    if (!useSavedPhone) {
+      // Switching to use saved phone
+      setPhoneNumber(savedPhoneNumber);
+    } else {
+      // Switching to use custom phone
+      if (phoneNumber === savedPhoneNumber) {
+        // Clear the field only if it's currently set to the saved number
+        setPhoneNumber('');
+      }
+    }
+  };
+  
+  // Save phone number to profile if requested
+  const savePhoneToProfile = async () => {
+    if (!shouldSavePhone || !phoneNumber || phoneNumber === savedPhoneNumber) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ 
+          phone_number: phoneNumber,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setSavedPhoneNumber(phoneNumber);
+      toast.success('Phone number saved to your profile');
+      
+    } catch (error) {
+      console.error('Error saving phone number to profile:', error);
+    }
   };
   
   // The actual order placement logic
@@ -266,11 +344,26 @@ const Checkout = () => {
     try {
       setPlacingOrder(true);
       
+      // Basic validation for phone number
+      const deliveryPhone = useSavedPhone ? savedPhoneNumber : phoneNumber;
+      if (!deliveryPhone) {
+        throw new Error('Please provide a valid phone number for delivery');
+      }
+      
+      if (deliveryPhone && !/^\d{10}$/.test(deliveryPhone)) {
+        throw new Error('Please enter a valid 10-digit phone number');
+      }
+      
       const priceBreakdown = getPriceBreakdown();
       const selectedAddressData = addresses.find(addr => addr.id === selectedAddress);
       
       if (!selectedAddressData) {
         throw new Error('Selected address not found');
+      }
+      
+      // Save phone to profile if requested (and different from saved)
+      if (shouldSavePhone && phoneNumber && phoneNumber !== savedPhoneNumber) {
+        await savePhoneToProfile();
       }
       
       // Generate transaction ID for COD
@@ -286,6 +379,7 @@ const Checkout = () => {
         p_coupon_code: priceBreakdown.couponCode || null,
         p_coupon_discount: priceBreakdown.couponDiscount,
         p_shipping_address: selectedAddressData.address,
+        p_phone_number: deliveryPhone,
         p_payment_method: 'cod',
         p_payment_status: 'pending',
         p_estimated_delivery_date: new Date(Date.now() + (priceBreakdown.maxDeliveryTime * 24 * 60 * 60 * 1000)).toISOString(),
@@ -339,7 +433,7 @@ const Checkout = () => {
       } else if (error.message?.includes('network')) {
         toast.error('Network error. Please check your connection and try again.');
       } else {
-        toast.error('Failed to place order. Please try again later.');
+        toast.error(error.message || 'Failed to place order. Please try again later.');
       }
     } finally {
       setPlacingOrder(false);
@@ -433,6 +527,72 @@ const Checkout = () => {
                 ))}
               </div>
             )}
+          </div>
+          
+          {/* Phone Number Section */}
+          <div className="bg-white p-4 rounded-lg border space-y-3">
+            <h2 className="text-base font-medium flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Contact Number
+            </h2>
+            
+            <div className="space-y-3">
+              {savedPhoneNumber ? (
+                <>
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="useSavedPhone"
+                      checked={useSavedPhone}
+                      onChange={toggleUseSavedPhone}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="useSavedPhone" className="ml-2 text-sm text-gray-700">
+                      Use saved phone number ({savedPhoneNumber})
+                    </label>
+                  </div>
+                  
+                  {!useSavedPhone && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500">Enter a different number for this delivery:</p>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        placeholder="Enter 10-digit phone number"
+                        maxLength={10}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">No saved phone number. Enter a number for this delivery:</p>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={handlePhoneNumberChange}
+                    placeholder="Enter 10-digit phone number"
+                    maxLength={10}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="savePhoneNumber"
+                      checked={shouldSavePhone}
+                      onChange={() => setShouldSavePhone(!shouldSavePhone)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="savePhoneNumber" className="ml-2 text-xs text-gray-700">
+                      Save this phone number to my profile for future orders
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Coupon Code Section */}
@@ -696,7 +856,8 @@ const Checkout = () => {
         orderDetails={{
           itemCount: cart.length,
           total: getPriceBreakdown().total,
-          couponCode: getPriceBreakdown().couponCode
+          couponCode: getPriceBreakdown().couponCode,
+          phoneNumber: useSavedPhone ? savedPhoneNumber : phoneNumber
         }}
       />
     </div>

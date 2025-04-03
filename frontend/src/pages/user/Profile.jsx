@@ -9,8 +9,13 @@ import {
   ShoppingBag,
   Heart,
   MapPin,
-  LogOut
+  LogOut,
+  Phone,
+  Edit
 } from 'lucide-react';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -18,6 +23,9 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [updatingPhone, setUpdatingPhone] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -72,8 +80,10 @@ const Profile = () => {
           }
 
           setUserProfile(newProfile);
+          setPhoneNumber(newProfile.phone_number || '');
         } else {
           setUserProfile(profile);
+          setPhoneNumber(profile.phone_number || '');
         }
       } catch (err) {
         console.error('Error in profile operation:', err);
@@ -102,6 +112,49 @@ const Profile = () => {
       .map(part => part[0])
       .join('')
       .toUpperCase();
+  };
+
+  const handleEditPhone = () => {
+    setEditingPhone(true);
+  };
+
+  const handleSavePhone = async () => {
+    try {
+      if (!user) return;
+      
+      setUpdatingPhone(true);
+      
+      // Basic validation
+      if (phoneNumber && !/^\d{10}$/.test(phoneNumber)) {
+        toast.error('Please enter a valid 10-digit phone number');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ 
+          phone_number: phoneNumber,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setUserProfile({
+        ...userProfile,
+        phone_number: phoneNumber
+      });
+      
+      setEditingPhone(false);
+      toast.success('Phone number updated successfully');
+      
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+      toast.error('Failed to update phone number');
+    } finally {
+      setUpdatingPhone(false);
+    }
   };
 
   const sections = [
@@ -145,12 +198,12 @@ const Profile = () => {
                   {getInitials(userProfile?.full_name || user.email)}
                 </AvatarFallback>
               </Avatar>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <h2 className="text-xl font-semibold">
                   {userProfile?.full_name || 'User'}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {userProfile?.phone_number || user.email}
+                  {user.email}
                 </p>
                 {error && (
                   <p className="text-sm text-red-500 mt-1">
@@ -159,6 +212,61 @@ const Profile = () => {
                 )}
               </div>
             </>
+          )}
+        </div>
+
+        {/* Phone Number Section */}
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Phone className="w-5 h-5 text-gray-500 mr-2" />
+              <span className="text-sm font-medium">Phone Number</span>
+            </div>
+            {!editingPhone && (
+              <button 
+                onClick={handleEditPhone}
+                className="text-xs text-indigo-600 flex items-center"
+                disabled={loading}
+              >
+                <Edit className="w-3 h-3 mr-1" />
+                Edit
+              </button>
+            )}
+          </div>
+          
+          {editingPhone ? (
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter your phone number"
+                maxLength={10}
+                className="text-sm"
+              />
+              <Button 
+                size="sm" 
+                onClick={handleSavePhone}
+                disabled={updatingPhone}
+              >
+                {updatingPhone ? 'Saving...' : 'Save'}
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  setEditingPhone(false);
+                  setPhoneNumber(userProfile?.phone_number || '');
+                }}
+                disabled={updatingPhone}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-gray-600 ml-7">
+              {userProfile?.phone_number ? userProfile.phone_number : 'No phone number added'}
+            </p>
           )}
         </div>
 

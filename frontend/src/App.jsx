@@ -24,6 +24,7 @@ import Checkout from './pages/user/Checkout';
 import OrderSuccess from './pages/user/OrderSuccess';
 import Orders from './pages/seller/Orders';
 import MyOrders from './pages/user/MyOrders';
+import CompletedOrders from './pages/seller/CompletedOrders';
 
 function App() {
   // Check if the current path is a seller route
@@ -48,6 +49,7 @@ function App() {
                   <Route path="edit-product/:productId" element={<EditProduct />} />
                   <Route path="size-chart" element={<SizeChart />} />
                   <Route path="orders" element={<Orders />} />
+                  <Route path="completed-orders" element={<CompletedOrders />} />
                   {/* Add other seller routes here */}
                 </Route>
               </Routes>

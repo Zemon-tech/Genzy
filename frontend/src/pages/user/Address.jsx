@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../../config/supabase';
-import { ArrowLeft, Plus, MapPin, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, MapPin, Edit2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import {
   Form,
   FormControl,
