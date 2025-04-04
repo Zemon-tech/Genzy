@@ -26,7 +26,16 @@ app.use(cookieParser());
 
 // Configure CORS
 const corsOptions = {
-    origin: ['http://localhost', 'http://localhost:80', 'http://localhost:5173', 'http://frontend'],
+    origin: [
+        'http://localhost', 
+        'http://localhost:80', 
+        'http://localhost:5173', 
+        'http://frontend',
+        // Add your Cloudflare Pages domain here
+        'https://genzy.pages.dev',
+        // If you have a custom domain, add it here
+        // 'https://yourdomain.com'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
@@ -58,7 +67,7 @@ app.use('/api/products', productRoutes);
 // Add refresh token route
 app.post('/api/auth/refresh', refreshAccessToken);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

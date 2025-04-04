@@ -1,0 +1,7 @@
+name = "genzy-backend"
+main = "worker.js"
+compatibility_date = "2023-12-01"
+
+[vars]
+# Environment variables will be set in the Cloudflare dashboard
+# or via wrangler secret commands 
