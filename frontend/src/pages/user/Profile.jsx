@@ -16,6 +16,7 @@ import {
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import toast from 'react-hot-toast';
+import { scrollToTop } from '../../utils/helpers';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -28,6 +29,9 @@ const Profile = () => {
   const [updatingPhone, setUpdatingPhone] = useState(false);
 
   useEffect(() => {
+    // Scroll to top when component mounts
+    scrollToTop();
+    
     if (!user) {
       navigate('/login');
       return;

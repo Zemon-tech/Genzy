@@ -18,7 +18,8 @@ const sellerSupabase = createClient(supabaseUrl, supabaseKey, {
   }
 });
 
-const API_URL = 'http://localhost:5011/api';
+// Use environment variable for API URL instead of hardcoded value
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const SellerAuthContext = createContext(null);
 

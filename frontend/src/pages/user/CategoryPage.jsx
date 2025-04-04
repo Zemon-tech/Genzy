@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../../config/api';
 import ProductCard from '../../components/product/ProductCard';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
+import { scrollToTop } from '../../utils/helpers';
 
 const CategoryPage = () => {
   const { categorySlug } = useParams();
@@ -25,30 +25,85 @@ const CategoryPage = () => {
   const categoryName = formatCategoryName(categorySlug);
 
   useEffect(() => {
+    // Scroll to top when component mounts or category changes
+    scrollToTop();
+    
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
         
         console.log('Fetching products for category slug:', categorySlug);
-        // Use the correct API URL without /api at the beginning since it's in baseURL
-        const response = await api.get(`/products?category=${categorySlug}`);
-        console.log('API Response:', response);
         
-        // Check if we have valid data
-        const data = response.data;
+        // Directly use supabase for data fetching instead of the API endpoint
+        const supabase = (await import('../../config/supabase')).default;
         
-        if (Array.isArray(data)) {
-          console.log(`Found ${data.length} products`);
-          setProducts(data);
-        } else if (data && typeof data === 'object' && Array.isArray(data.data)) {
-          console.log(`Found ${data.data.length} products (nested)`);
-          setProducts(data.data);
-        } else {
-          console.error('Unexpected data format:', data);
-          setProducts([]);
-          setError('Received unexpected data format from server');
+        // Create variations of the category name to try
+        const exactMatch = categorySlug.toLowerCase();  // e.g., "t-shirts"
+        const noHyphen = categorySlug.toLowerCase().replace(/-/g, '');  // e.g., "tshirts"
+        const withSpaces = categorySlug.toLowerCase().replace(/-/g, ' ');  // e.g., "t shirts"
+        const titleCase = formatCategoryName(categorySlug);  // e.g., "T-shirts"
+        
+        console.log('Trying variations:', [exactMatch, noHyphen, withSpaces, titleCase]);
+        
+        // First try exact match with the URL slug
+        let { data, error: fetchError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', exactMatch);
+          
+        // If no results, try with case-insensitive matching
+        if (!fetchError && (!data || data.length === 0)) {
+          const { data: ilikeData, error: ilikeError } = await supabase
+            .from('products')
+            .select('*')
+            .ilike('category', `%${exactMatch}%`);
+            
+          if (!ilikeError && ilikeData && ilikeData.length > 0) {
+            data = ilikeData;
+          }
         }
+        
+        // If still no results, try with no hyphens 
+        if (!fetchError && (!data || data.length === 0)) {
+          const { data: noHyphenData, error: noHyphenError } = await supabase
+            .from('products')
+            .select('*')
+            .ilike('category', `%${noHyphen}%`);
+            
+          if (!noHyphenError && noHyphenData && noHyphenData.length > 0) {
+            data = noHyphenData;
+          }
+        }
+        
+        // If still no results, try with spaces instead of hyphens
+        if (!fetchError && (!data || data.length === 0)) {
+          const { data: withSpacesData, error: withSpacesError } = await supabase
+            .from('products')
+            .select('*')
+            .ilike('category', `%${withSpaces}%`);
+            
+          if (!withSpacesError && withSpacesData && withSpacesData.length > 0) {
+            data = withSpacesData;
+          }
+        }
+        
+        // Final attempt with title case
+        if (!fetchError && (!data || data.length === 0)) {
+          const { data: titleCaseData, error: titleCaseError } = await supabase
+            .from('products')
+            .select('*')
+            .ilike('category', `%${titleCase}%`);
+            
+          if (!titleCaseError && titleCaseData && titleCaseData.length > 0) {
+            data = titleCaseData;
+          }
+        }
+        
+        if (fetchError) throw fetchError;
+        
+        console.log(`Found ${data?.length || 0} products via supabase`);
+        setProducts(data || []);
       } catch (err) {
         console.error('Error fetching products:', err);
         setError(`Failed to load products: ${err.message}`);

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
-import { calculateDiscount } from '../../utils/helpers';
+import { calculateDiscount, scrollToTop } from '../../utils/helpers';
 import { Link, useNavigate } from 'react-router-dom';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ShoppingBag, Heart, Trash2, Plus, Minus, ShoppingBasket, Clock, CreditCard, Tag, X } from 'lucide-react';
@@ -61,6 +61,11 @@ const Cart = () => {
     couponError,
     couponLoading
   } = useCart();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    scrollToTop();
+  }, []);
 
   // Handle size and color selection confirm
   const handleSelectionConfirm = (options) => {

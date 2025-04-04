@@ -1,0 +1,17 @@
+{
+  "name": "genzy-app",
+  "version": "1.0.0",
+  "description": "Genzy application",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install",
+    "dev": "cd backend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "private": true
+} 

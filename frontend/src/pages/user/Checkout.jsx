@@ -7,6 +7,7 @@ import { ArrowLeft, CreditCard, Truck, Package, Tag, MapPin, Plus, Check, Clock,
 import toast from 'react-hot-toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import PropTypes from 'prop-types';
+import { scrollToTop } from '../../utils/helpers';
 
 // Payment methods - simplified for now to focus on COD
 const PAYMENT_METHODS = [
@@ -121,14 +122,15 @@ const Checkout = () => {
   const [useSavedPhone, setUseSavedPhone] = useState(true);
   const [shouldSavePhone, setShouldSavePhone] = useState(false);
   
-  // Redirect to cart if cart is empty
   useEffect(() => {
+    // Scroll to top when component mounts
+    scrollToTop();
+    
     if (!authLoading && cart.length === 0) {
       navigate('/cart');
     }
   }, [cart, authLoading, navigate]);
   
-  // Fetch user's addresses
   useEffect(() => {
     if (authLoading) return;
     

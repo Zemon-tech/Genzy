@@ -25,6 +25,7 @@ import OrderSuccess from './pages/user/OrderSuccess';
 import Orders from './pages/seller/Orders';
 import MyOrders from './pages/user/MyOrders';
 import CompletedOrders from './pages/seller/CompletedOrders';
+import { ScrollToTopOnMount } from './utils/helpers';
 
 function App() {
   // Check if the current path is a seller route
@@ -37,6 +38,7 @@ function App() {
         <CartProvider>
           <SellerAuthProvider>
             <Toaster />
+            <ScrollToTopOnMount />
             {isSellerRoute ? (
               // Seller Routes with full-width layout
               <Routes>

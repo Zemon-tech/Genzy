@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,6 +13,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Production build settings
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: false,
+  },
+  // Development server settings
   server: {
     port: 5173,
     hmr: false,

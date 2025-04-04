@@ -17,6 +17,16 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
   }, [images.length]);
 
+  // Handle swipe gesture
+  const handleSwipe = (swipeInfo) => {
+    // If swipe distance is greater than 50px, trigger slide change
+    if (swipeInfo.offset.x > 50) {
+      handleManualNavigation(prevSlide); // Swipe right = go to previous
+    } else if (swipeInfo.offset.x < -50) {
+      handleManualNavigation(nextSlide); // Swipe left = go to next
+    }
+  };
+
   // Reset autoplay when manually interacted
   const handleManualNavigation = (action) => {
     setIsPaused(true);
@@ -61,6 +71,10 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
           transition={{
             x: { type: "tween", duration: 0.5, ease: "easeInOut" },
           }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleSwipe}
         >
           {/* Background Image */}
           <div className="absolute inset-0">
