@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
 import supabase from '../../config/supabase';
-import { calculateDiscount } from '../../utils/helpers';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
-import BrandSlider from '../../components/BrandSlider';
-import { HiSearch, HiAdjustments } from 'react-icons/hi';
+import { HiSearch } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
+import Footer from '../../components/user/Footer';
+import { CATEGORIES, CATEGORY_IMAGES } from '../../utils/constants';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [selectedBrand, setSelectedBrand] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
   const carouselSlides = [
@@ -93,63 +90,29 @@ const Home = () => {
     }
   ];
 
+  // Create categories array combining promo and product categories
   const categories = [
     // First two slots for news/sales updates
     {
-      name: "Flash Sale",
+      name: "Sale 50%+ OFF",
       image: "gg.gif", // Example sale gif
       type: "promo",
-      link: "/search?discount=true",
-      description: "Up to 70% Off | Limited Time"
+      link: "/sale",
+      description: "Huge Discounts Limited Time"
     },
     {
       name: "New Arrivals",
       image: "ff.gif", // Example new arrivals gif
       type: "promo",
-      link: "/search?sort=newest",
+      link: "/new-arrivals",
       description: "Fresh Styles Just Dropped"
     },
-    // Regular categories - matching the search page filters
-    {
-      name: "T-shirts",
-      image: "https://m.media-amazon.com/images/I/61yHkZpT15L._SX679_.jpg",
+    // Regular categories from constants
+    ...CATEGORIES.map(category => ({
+      name: category,
+      image: CATEGORY_IMAGES[category],
       type: "category",
-    },
-    {
-      name: "Shirts",
-      image: "https://m.media-amazon.com/images/I/61ZZ0vbAhsL._SY879_.jpg",
-      type: "category",
-    },
-    {
-      name: "Co-ords",
-      image: "https://m.media-amazon.com/images/I/61MVsaikwoL._SY879_.jpg",
-      type: "category",
-    },
-    {
-      name: "Sweatshirts",
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7",
-      type: "category",
-    },
-    {
-      name: "Jeans",
-      image: "https://m.media-amazon.com/images/I/81WzIbilc9L._SY879_.jpg",
-      type: "category",
-    },
-    {
-      name: "Trousers",
-      image: "https://m.media-amazon.com/images/I/61FkSi+4MqL._SY879_.jpg",
-      type: "category",
-    },
-    {
-      name: "Jackets",
-      image: "https://m.media-amazon.com/images/I/615fQ9S1m-L._SY879_.jpg",
-      type: "category",
-    },
-    {
-      name: "Sweaters",
-      image: "https://m.media-amazon.com/images/I/71cinODyz-L._SX679_.jpg",
-      type: "category",
-    }
+    }))
   ];
 
   useEffect(() => {
@@ -163,109 +126,53 @@ const Home = () => {
         
         if (productsError) throw productsError;
         setProducts(productsData);
-
-        // Fetch unique brands - only brand_name
-        const { data: brandsData, error: brandsError } = await supabase
-          .from('sellers')
-          .select('brand_name')
-          .not('brand_name', 'is', null);
-        
-        if (brandsError) throw brandsError;
-        setBrands(brandsData);
       } catch (error) {
         console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Filter products by brand
-  const filteredProducts = selectedBrand
-    ? products.filter(product => product.sellers?.brand_name === selectedBrand)
-    : products;
-
+  // Products section component with display name
   const ProductsSection = React.memo(() => (
     <section className="py-4 px-3">
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h4 className="text-sm font-medium text-indigo-600 tracking-wider uppercase mb-0.5">
-            Fresh Drops
-          </h4>
           <h2 className="text-2xl font-bold tracking-tight">
-            New Arrivals
+            Discover More
           </h2>
-        </div>
-
-        {/* Filter Toggle Button */}
-        <button 
-          onClick={() => document.getElementById('brandFilters').scrollIntoView({ behavior: 'smooth' })}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200"
-        >
-          <HiAdjustments className="w-5 h-5" />
-          <span className="text-sm font-medium">Filter</span>
-        </button>
-      </div>
-
-      {/* Brand Filters */}
-      <div id="brandFilters" className="mb-4 -mx-3">
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar py-2 px-3">
-          <motion.button
-            onClick={() => setSelectedBrand(null)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
-              ${!selectedBrand 
-                ? 'bg-black text-white shadow-lg scale-105' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            All Brands
-          </motion.button>
-          
-          {brands.map((brand) => (
-            <motion.button
-              key={brand.brand_name}
-              onClick={() => setSelectedBrand(brand.brand_name)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
-                ${selectedBrand === brand.brand_name 
-                  ? 'bg-black text-white shadow-lg scale-105' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              whileTap={{ scale: 0.95 }}
-            >
-              {brand.brand_name}
-            </motion.button>
-          ))}
         </div>
       </div>
 
       {/* Products Grid */}
       <AnimatePresence mode="wait">
         <motion.div 
-          key={selectedBrand || 'all'}
+          key="all"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
           className="grid grid-cols-2 gap-2"
         >
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </motion.div>
       </AnimatePresence>
 
       {/* Empty State */}
-      {filteredProducts.length === 0 && (
+      {products.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">No products found for this brand</p>
+          <p className="text-gray-500">No products found</p>
         </div>
       )}
     </section>
   ));
-
-  const MemoizedBrandSlider = React.memo(BrandSlider);
+  
+  // Set display name to fix linter error
+  ProductsSection.displayName = 'ProductsSection';
 
   return (
     <div className="min-h-screen bg-white">
@@ -292,8 +199,8 @@ const Home = () => {
           <div className="h-full">
             <ImageCarousel 
               images={carouselSlides.map(slide => slide.image)}
-              slides={carouselSlides.map(slide => (
-                <div className="flex flex-col items-center text-center">
+              slides={carouselSlides.map((slide, index) => (
+                <div key={index} className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold mb-1">{slide.content.props.children[0].props.children}</h1>
                   <p className="text-sm mb-3 opacity-90">{slide.content.props.children[1].props.children}</p>
                   {slide.content.props.children[2]}
@@ -376,15 +283,8 @@ const Home = () => {
         {/* New Arrivals Section */}
         <ProductsSection />
 
-        {/* Partnered Brands Section (renamed from Featured Brands) */}
-        <section className="py-6">
-          <h2 className="text-xl font-bold text-center mb-4">Partnered Brands</h2>
-          <div className="h-[12vh] bg-white/80 backdrop-blur-sm flex flex-col justify-center">
-            <div className="flex-1 flex items-center overflow-hidden py-1">
-              <MemoizedBrandSlider brands={brands} />
-            </div>
-          </div>
-        </section>
+        {/* Footer (replacing partnered brands section) */}
+        <Footer />
       </div>
     </div>
   );

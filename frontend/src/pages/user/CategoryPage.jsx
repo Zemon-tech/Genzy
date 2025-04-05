@@ -4,6 +4,7 @@ import ProductCard from '../../components/product/ProductCard';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { scrollToTop } from '../../utils/helpers';
+import { CATEGORIES } from '../../utils/constants';
 
 const CategoryPage = () => {
   const { categorySlug } = useParams();
@@ -39,68 +40,52 @@ const CategoryPage = () => {
         const supabase = (await import('../../config/supabase')).default;
         
         // Create variations of the category name to try
-        const exactMatch = categorySlug.toLowerCase();  // e.g., "t-shirts"
-        const noHyphen = categorySlug.toLowerCase().replace(/-/g, '');  // e.g., "tshirts"
-        const withSpaces = categorySlug.toLowerCase().replace(/-/g, ' ');  // e.g., "t shirts"
-        const titleCase = formatCategoryName(categorySlug);  // e.g., "T-shirts"
+        const exactMatch = categorySlug.toLowerCase();  // e.g., "t-shirt"
+        const noHyphen = categorySlug.toLowerCase().replace(/-/g, '');  // e.g., "tshirt"
+        const withSpaces = categorySlug.toLowerCase().replace(/-/g, ' ');  // e.g., "t shirt"
+        const titleCase = formatCategoryName(categorySlug);  // e.g., "T-shirt"
+        
+        // Find the standard category that best matches the slug
+        const standardCategory = CATEGORIES.find(cat => 
+          cat.toLowerCase() === exactMatch || 
+          cat.toLowerCase() === noHyphen ||
+          cat.toLowerCase() === withSpaces
+        );
         
         console.log('Trying variations:', [exactMatch, noHyphen, withSpaces, titleCase]);
+        console.log('Standard category match:', standardCategory);
         
         // First try exact match with the URL slug
-        let { data, error: fetchError } = await supabase
+        let { data } = await supabase
           .from('products')
-          .select('*')
-          .eq('category', exactMatch);
-          
-        // If no results, try with case-insensitive matching
-        if (!fetchError && (!data || data.length === 0)) {
-          const { data: ilikeData, error: ilikeError } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('category', `%${exactMatch}%`);
-            
-          if (!ilikeError && ilikeData && ilikeData.length > 0) {
-            data = ilikeData;
-          }
-        }
+          .select('*');
         
-        // If still no results, try with no hyphens 
-        if (!fetchError && (!data || data.length === 0)) {
-          const { data: noHyphenData, error: noHyphenError } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('category', `%${noHyphen}%`);
-            
-          if (!noHyphenError && noHyphenData && noHyphenData.length > 0) {
-            data = noHyphenData;
+        // If we found a standard category match, use that
+        if (standardCategory) {
+          // For shirt category, make sure we don't include t-shirts
+          if (standardCategory.toLowerCase() === 'shirt') {
+            data = data.filter(product => 
+              product.category && 
+              (product.category === 'Shirt' || product.category === 'shirt')
+            );
+          } else {
+            data = data.filter(product => 
+              product.category && product.category.toLowerCase() === standardCategory.toLowerCase()
+            );
           }
+        } else {
+          // Otherwise try with various possible formats
+          data = data.filter(product => {
+            if (!product.category) return false;
+            const productCat = product.category.toLowerCase();
+            return productCat === exactMatch || 
+                   productCat === noHyphen || 
+                   productCat === withSpaces || 
+                   productCat.includes(exactMatch) ||
+                   productCat.includes(noHyphen) ||
+                   productCat.includes(withSpaces);
+          });
         }
-        
-        // If still no results, try with spaces instead of hyphens
-        if (!fetchError && (!data || data.length === 0)) {
-          const { data: withSpacesData, error: withSpacesError } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('category', `%${withSpaces}%`);
-            
-          if (!withSpacesError && withSpacesData && withSpacesData.length > 0) {
-            data = withSpacesData;
-          }
-        }
-        
-        // Final attempt with title case
-        if (!fetchError && (!data || data.length === 0)) {
-          const { data: titleCaseData, error: titleCaseError } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('category', `%${titleCase}%`);
-            
-          if (!titleCaseError && titleCaseData && titleCaseData.length > 0) {
-            data = titleCaseData;
-          }
-        }
-        
-        if (fetchError) throw fetchError;
         
         console.log(`Found ${data?.length || 0} products via supabase`);
         setProducts(data || []);

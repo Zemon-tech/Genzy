@@ -75,7 +75,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <div className="bg-white border-t py-2 px-6">
+    <div className="bg-white border-t shadow-lg py-2 px-6">
       <div className="flex items-center justify-between">
         {navItems.map((item) => {
           const isActive = currentPath === item.path;

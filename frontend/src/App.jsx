@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
 import Search from './pages/user/Search';
@@ -25,7 +25,76 @@ import OrderSuccess from './pages/user/OrderSuccess';
 import Orders from './pages/seller/Orders';
 import MyOrders from './pages/user/MyOrders';
 import CompletedOrders from './pages/seller/CompletedOrders';
+import SalePage from './pages/user/SalePage';
+import NewArrivalsPage from './pages/user/NewArrivalsPage';
 import { ScrollToTopOnMount } from './utils/helpers';
+import AboutPage from './pages/user/AboutPage';
+import ContactPage from './pages/user/ContactPage';
+import PrivacyPage from './pages/user/PrivacyPage';
+import TermsPage from './pages/user/TermsPage';
+import { AnimatePresence, motion } from 'framer-motion';
+
+// Animation variants
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 20
+  },
+  in: {
+    opacity: 1,
+    y: 0
+  },
+  out: {
+    opacity: 0,
+    y: -20
+  }
+};
+
+const pageTransition = {
+  type: 'tween',
+  ease: 'easeInOut',
+  duration: 0.3
+};
+
+// AnimatedRoutes component to handle route animations
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={pageTransition}
+        className="min-h-screen"
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/product/:productId" element={<ProductPage />} />
+          <Route path="/address" element={<Address />} />
+          <Route path="/category/:categorySlug" element={<CategoryPage />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+          <Route path="/orders" element={<MyOrders />} />
+          <Route path="/sale" element={<SalePage />} />
+          <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
 
 function App() {
   // Check if the current path is a seller route
@@ -59,23 +128,10 @@ function App() {
               // User Routes with mobile layout
               <div className="min-h-screen bg-gray-50">
                 <div className="max-w-[480px] mx-auto bg-white min-h-screen relative">
-                  <div className="pb-24">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/search" element={<Search />} />
-                      <Route path="/cart" element={<Cart />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/wishlist" element={<Wishlist />} />
-                      <Route path="/product/:productId" element={<ProductPage />} />
-                      <Route path="/address" element={<Address />} />
-                      <Route path="/category/:categorySlug" element={<CategoryPage />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-                      <Route path="/orders" element={<MyOrders />} />
-                    </Routes>
+                  <div className="pb-16">
+                    <AnimatedRoutes />
                   </div>
-                  <div className="fixed bottom-0 left-0 right-0">
+                  <div className="fixed bottom-0 left-0 right-0 z-10">
                     <div className="max-w-[480px] mx-auto">
                       <BottomNav />
                     </div>

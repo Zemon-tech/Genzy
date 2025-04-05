@@ -3,28 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 import supabase from '../../config/supabase';
 import { calculateDiscount } from '../../utils/helpers';
-
-const CATEGORIES = [
-  'T-Shirts',
-  'Shirts',
-  'Jeans',
-  'Trousers',
-  'Dresses',
-  'Jackets',
-  'Sweaters',
-  'Co-ords',
-  'Sweatshirts',
-  'Activewear',
-];
-
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-const COLORS = [
-  'Red', 'Blue', 'Black', 'White', 'Green',
-  'Yellow', 'Purple', 'Orange', 'Grey',
-];
-const STYLE_TYPES = ['Casual', 'Formal', 'Sportswear', 'Ethnic', 'Party'];
-const DELIVERY_TIMES = ['2-4 Days', '5-7 Days', '7-10 Days', '10-14 Days'];
-const RETURN_POLICIES = ['No Return', '7 Days Return', '15 Days Return', '30 Days Return'];
+import { 
+  CATEGORIES, 
+  SIZES, 
+  COLORS, 
+  STYLE_TYPES, 
+  DELIVERY_TIMES, 
+  RETURN_POLICIES 
+} from '../../utils/constants';
 
 const EditProduct = () => {
   const { productId } = useParams();
@@ -575,7 +561,7 @@ const EditProduct = () => {
                     
                     {Object.values(sizeChartImages).every(chart => chart === null) && (
                       <p className="mt-2 text-sm text-amber-600">
-                        You haven't uploaded any size charts yet. 
+                        You haven&apos;t uploaded any size charts yet. 
                         <button 
                           type="button"
                           onClick={() => navigate('/seller/size-chart')}
