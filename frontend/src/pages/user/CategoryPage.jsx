@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
-import { scrollToTop } from '../../utils/helpers';
 import { CATEGORIES } from '../../utils/constants';
 
 const CategoryPage = () => {
@@ -12,7 +11,7 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
+  
   // Format the category name for display (convert slug to title case)
   const formatCategoryName = (slug) => {
     // Check if the original category contained hyphens that should be preserved
@@ -26,9 +25,6 @@ const CategoryPage = () => {
   const categoryName = formatCategoryName(categorySlug);
 
   useEffect(() => {
-    // Scroll to top when component mounts or category changes
-    scrollToTop();
-    
     const fetchProducts = async () => {
       try {
         setLoading(true);

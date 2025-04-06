@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
 import Search from './pages/user/Search';
@@ -47,19 +47,55 @@ const pageVariants = {
   out: {
     opacity: 0,
     y: -20
+  },
+  // New variant for when we don't want animation
+  none: {
+    opacity: 1,
+    y: 0
   }
 };
 
 const pageTransition = {
   type: 'tween',
   ease: 'easeInOut',
-  duration: 0.3
+  duration: 0.2 // Reduced from 0.3 for faster transitions
 };
 
 // AnimatedRoutes component to handle route animations
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const navigationType = useNavigationType();
+  
+  // Disable animations completely for POP navigation (going back)
+  const shouldAnimate = navigationType !== 'POP';
 
+  // If we're going back, don't use animations at all
+  if (!shouldAnimate) {
+    return (
+      <Routes location={location}>
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/product/:productId" element={<ProductPage />} />
+        <Route path="/address" element={<Address />} />
+        <Route path="/category/:categorySlug" element={<CategoryPage />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+        <Route path="/orders" element={<MyOrders />} />
+        <Route path="/sale" element={<SalePage />} />
+        <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+      </Routes>
+    );
+  }
+
+  // Only use animations for forward navigation
   return (
     <AnimatePresence mode="wait">
       <motion.div

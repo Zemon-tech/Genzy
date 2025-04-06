@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigationType } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import supabase from '../../config/supabase';
 import ProductDetails from '../../components/product/ProductDetails';
 import ProductDescription from '../../components/product/ProductDescription';
 import RelatedProducts from '../../components/product/RelatedProducts';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
-import { scrollToTop } from '../../utils/helpers';
 
 // Track navigation direction globally to ensure consistent animations
 const DirectionContext = {
@@ -18,6 +17,10 @@ const DirectionContext = {
 
 const ProductPage = () => {
   const { productId } = useParams();
+  const navigationType = useNavigationType();
+  // Check if we're returning to this page (POP navigation)
+  const isReturningToPage = navigationType === 'POP';
+  
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,8 +96,8 @@ const ProductPage = () => {
   }, [product, currentImageIndex]);
 
   useEffect(() => {
-    // Scroll to top when component mounts or product ID changes
-    scrollToTop();
+    // We're now handling scroll position globally with the router
+    // scrollToTop();
     fetchProduct();
   }, [productId]);
 
@@ -264,7 +267,13 @@ const ProductPage = () => {
         opacity: { duration: 0.2 },
         scale: { duration: 0.2 }
       }
-    })
+    }),
+    // Add a "none" variant for when we're returning to the page
+    none: {
+      x: 0,
+      opacity: 1,
+      scale: 1
+    }
   };
 
   return (
@@ -281,16 +290,16 @@ const ProductPage = () => {
           )}
         </div>
             
-        <AnimatePresence initial={false} custom={DirectionContext.current} mode="popLayout">
+        <AnimatePresence initial={!isReturningToPage} custom={DirectionContext.current} mode="popLayout">
           <motion.div
             ref={sliderRef}
             key={currentImageIndex}
             className="absolute inset-0 touch-manipulation will-change-transform"
             custom={DirectionContext.current}
             variants={imageVariants}
-            initial="enter"
+            initial={isReturningToPage ? "none" : "enter"}
             animate="center"
-            exit="exit"
+            exit={isReturningToPage ? "none" : "exit"}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.4}
@@ -317,10 +326,10 @@ const ProductPage = () => {
                 className="w-full h-full object-contain will-change-transform"
                 draggable="false"
                 style={{ pointerEvents: "none" }} 
-                initial={{ opacity: 0 }}
+                initial={isReturningToPage ? { opacity: 1 } : { opacity: 0 }}
                 animate={{ 
                   opacity: imagesLoaded[currentImageIndex] ? 1 : 0,
-                  transition: { duration: 0.3 }
+                  transition: isReturningToPage ? { duration: 0 } : { duration: 0.3 }
                 }}
                 onError={() => {
                   // Handle image load error by setting to not loaded

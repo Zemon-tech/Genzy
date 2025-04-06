@@ -67,7 +67,8 @@
     --chart-5: 340 75% 55%
   }
   html {
-    scroll-behavior: smooth;
+    /* We'll control scroll behavior programmatically instead of using CSS */
+    /* scroll-behavior: smooth; */
   }
   
   body {

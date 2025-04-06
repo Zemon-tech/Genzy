@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
 import supabase from '../../config/supabase';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useNavigationType } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 import { HiSearch } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -135,41 +135,46 @@ const Home = () => {
   }, []);
 
   // Products section component with display name
-  const ProductsSection = React.memo(() => (
-    <section className="py-4 px-3">
-      {/* Section Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Discover More
-          </h2>
-        </div>
-      </div>
+  const ProductsSection = React.memo(() => {
+    const navigationType = useNavigationType();
+    const isReturningToPage = navigationType === 'POP';
 
-      {/* Products Grid */}
-      <AnimatePresence mode="wait">
-        <motion.div 
-          key="all"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-          className="grid grid-cols-2 gap-2"
-        >
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Empty State */}
-      {products.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No products found</p>
+    return (
+      <section className="py-4 px-3">
+        {/* Section Header */}
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Discover More
+            </h2>
+          </div>
         </div>
-      )}
-    </section>
-  ));
+
+        {/* Products Grid */}
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="all"
+            initial={isReturningToPage ? false : { opacity: 0, y: 20 }}
+            animate={isReturningToPage ? false : { opacity: 1, y: 0 }}
+            exit={isReturningToPage ? false : { opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-2 gap-2"
+          >
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Empty State */}
+        {products.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No products found</p>
+          </div>
+        )}
+      </section>
+    );
+  });
   
   // Set display name to fix linter error
   ProductsSection.displayName = 'ProductsSection';

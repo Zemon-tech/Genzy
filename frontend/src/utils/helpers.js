@@ -4,6 +4,9 @@ export const calculateDiscount = (mrp, sellingPrice) => {
   return Math.round(discount);
 };
 
+// Store scroll positions for each path
+const scrollPositions = new Map();
+
 // Utility to scroll page to top - useful for page transitions
 export const scrollToTop = (smooth = false) => {
   window.scrollTo({
@@ -13,16 +16,45 @@ export const scrollToTop = (smooth = false) => {
   });
 };
 
-// Component to scroll to top on route change
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+// Component to handle scroll behavior on route change
+import { useEffect, useLayoutEffect } from 'react';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
 export const ScrollToTopOnMount = () => {
   const { pathname } = useLocation();
+  const navigationType = useNavigationType(); // 'POP', 'PUSH', or 'REPLACE'
   
+  // Save current scroll position before navigating away
   useEffect(() => {
-    scrollToTop();
+    const handleBeforeUnload = () => {
+      scrollPositions.set(pathname, window.scrollY);
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Save the position when component unmounts (navigation)
+    return () => {
+      scrollPositions.set(pathname, window.scrollY);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [pathname]);
+  
+  // Handle scrolling behavior on route change - use useLayoutEffect to run synchronously
+  // before browser repaints, making the scroll position restoration immediate
+  useLayoutEffect(() => {
+    // Handle immediate scroll restoration for 'POP' navigation
+    if (navigationType === 'POP') {
+      const savedPosition = scrollPositions.get(pathname);
+      if (savedPosition !== undefined) {
+        // Use synchronous scroll with auto behavior for instant position restoration
+        // This has to happen before any animations or painting
+        window.scrollTo(0, savedPosition);
+      }
+    } else {
+      // For 'PUSH' or 'REPLACE', scroll to top
+      scrollToTop();
+    }
+  }, [pathname, navigationType]);
   
   return null;
 }; 

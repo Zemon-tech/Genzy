@@ -1,12 +1,8 @@
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
-import { scrollToTop } from '../../utils/helpers';
 
 const SalePage = () => {
   const navigate = useNavigate();
-
-  // Scroll to top when component mounts
-  scrollToTop();
 
   return (
     <div className="min-h-screen bg-white p-4">
