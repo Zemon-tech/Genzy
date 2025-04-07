@@ -11,7 +11,8 @@ import {
   MapPin,
   LogOut,
   Phone,
-  Edit
+  Edit,
+  Download
 } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
@@ -26,6 +27,51 @@ const Profile = () => {
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [updatingPhone, setUpdatingPhone] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  // PWA installation detection
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent the default browser install prompt
+      e.preventDefault();
+      // Save the event for later use
+      setDeferredPrompt(e);
+      // Update UI to show the install button
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if the app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  // Handle app installation
+  const handleInstallClick = () => {
+    if (!deferredPrompt) return;
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setIsInstallable(false);
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      // Clear the saved prompt
+      setDeferredPrompt(null);
+    });
+  };
 
   useEffect(() => {
     if (!user) {
@@ -157,6 +203,7 @@ const Profile = () => {
     }
   };
 
+  // Create sections array including PWA install option if available
   const sections = [
     {
       icon: ShoppingBag,
@@ -174,6 +221,16 @@ const Profile = () => {
       onClick: () => navigate('/address')
     }
   ];
+
+  // Add install app section if PWA is installable
+  if (isInstallable) {
+    sections.push({
+      icon: Download,
+      label: 'Install App',
+      onClick: handleInstallClick,
+      className: "text-green-600 hover:bg-green-50 border-green-100"
+    });
+  }
 
   if (!user) return null;
 
@@ -287,6 +344,7 @@ const Profile = () => {
                   icon={section.icon}
                   label={section.label}
                   onClick={section.onClick}
+                  className={section.className}
                 />
               ))}
               
