@@ -22,6 +22,9 @@ export default defineConfig({
         clientsClaim: true, 
         skipWaiting: true, 
         navigationPreload: true,
+        // Disable navigation fallback which causes offline page to flash
+        navigateFallback: null,
+        navigateFallbackDenylist: [],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -74,23 +77,40 @@ export default defineConfig({
               networkTimeoutSeconds: 10
             }
           },
-          // Add a general cache for all navigation requests (HTML)
+          // Handle navigation requests with the proper approach
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
+            handler: 'NetworkFirst', // Must be NetworkFirst if using networkTimeoutSeconds
             options: {
               cacheName: 'navigation-cache',
-              networkTimeoutSeconds: 5, 
+              // Only show offline page after a longer timeout
+              networkTimeoutSeconds: 3,
               plugins: [
                 {
-                  // Custom handling for offline mode
-                  handlerDidError: async () => {
+                  // Custom handler for offline detection
+                  handlerDidError: async ({ request }) => {
+                    // If we're really offline, show the offline page
                     if (!navigator.onLine) {
+                      console.log('Confirmed offline, showing offline page');
                       return await caches.match('/offline.html');
                     }
                     
-                    // Always fallback to offline page on error
+                    // If we're online but still got an error, try to show cached content
+                    // before showing the offline page
+                    const cachedResponse = await caches.match(request);
+                    if (cachedResponse) {
+                      return cachedResponse;
+                    }
+                    
+                    // Last resort - show offline page
                     return await caches.match('/offline.html');
+                  },
+                  // Avoid caching error responses
+                  cacheWillUpdate: async ({ response }) => {
+                    if (!response || response.status >= 400) {
+                      return null;
+                    }
+                    return response;
                   }
                 }
               ]
@@ -108,10 +128,7 @@ export default defineConfig({
               }
             }
           }
-        ],
-        // Update offline fallback settings
-        navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/\/api\//], // Don't use fallback for API calls
+        ]
       },
       devOptions: {
         // Enable PWA in development

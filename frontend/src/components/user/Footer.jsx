@@ -133,7 +133,7 @@ const Footer = () => {
             <span className="text-sm">Share</span>
           </button>
           <a 
-            href="mailto:madhavvarshney1879@gmail.com" 
+            href="mailto:nameste.kayo@gmail.com" 
             className="p-3 rounded-full bg-gray-800 hover:bg-red-600 transition-all duration-300 transform hover:scale-110 hover:rotate-3 hover:shadow-lg"
             aria-label="Email"
           >

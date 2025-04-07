@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
 import Search from './pages/user/Search';
@@ -35,6 +35,7 @@ import PrivacyPage from './pages/user/PrivacyPage';
 import TermsPage from './pages/user/TermsPage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkInstallationEligibility } from './utils/pwaHelpers';
+import { shouldSkipOfflinePage } from './registerSW';
 
 // Animation variants
 const pageVariants = {
@@ -134,6 +135,60 @@ const AnimatedRoutes = () => {
   );
 };
 
+// NetworkStatusProvider component to detect and manage network status at app level
+function NetworkStatusProvider({ children }) {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    // Update local network status when it changes
+    const handleOnlineStatus = () => {
+      console.log('Network status change detected: online');
+      setIsOnline(true);
+      localStorage.setItem('offlineMode', 'false');
+      // Clear service worker cache if needed for problematic pages
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'CLEAR_OFFLINE_STATUS'
+        });
+      }
+    };
+    
+    const handleOfflineStatus = () => {
+      console.log('Network status change detected: offline');
+      setIsOnline(false);
+      localStorage.setItem('offlineMode', 'true');
+    };
+    
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOfflineStatus);
+    
+    // On app load, fetch a small resource to verify connectivity
+    // This helps detect cases where browser thinks we're online but we're not
+    if (navigator.onLine) {
+      fetch('/', { method: 'HEAD', cache: 'no-store' })
+        .then(() => {
+          console.log('Connectivity verified with server');
+          setIsOnline(true);
+        })
+        .catch(err => {
+          console.log('Failed to connect to server despite online status', err);
+          // Don't set offline here, defer to the browser's status
+        });
+    }
+    
+    // Set a flag to indicate the app has been loaded at least once
+    sessionStorage.setItem('appLoaded', 'true');
+    
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOfflineStatus);
+    };
+  }, []);
+  
+  // If device just reported going offline, use this context to update UI appropriately
+  return children;
+}
+
 function App() {
   // Check if the current path is a seller route
   const isSellerRoute = window.location.pathname.startsWith('/seller');
@@ -145,27 +200,23 @@ function App() {
     const pwaStatus = checkInstallationEligibility();
     console.log('PWA STATUS:', pwaStatus);
     
-    // Handle online/offline events at the application level
-    const handleOnlineStatus = () => {
-      console.log('App is online');
-      // If the app was offline and is now coming online, refresh content
-      if (sessionStorage.getItem('wasOffline') === 'true') {
-        console.log('Recovering from offline state');
-        sessionStorage.setItem('wasOffline', 'false');
+    // On fresh load, always clear any stale offline status
+    if (!sessionStorage.getItem('refreshCount')) {
+      sessionStorage.setItem('refreshCount', '1');
+      sessionStorage.setItem('wasOffline', 'false');
+      localStorage.setItem('offlineMode', 'false');
+      
+      // If we should skip offline page on load, notify the service worker
+      if (shouldSkipOfflinePage() && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SKIP_OFFLINE_CHECK'
+        });
       }
-    };
-    
-    const handleOfflineStatus = () => {
-      console.log('App is offline');
-      sessionStorage.setItem('wasOffline', 'true');
-    };
-    
-    // Log initial status
-    console.log(`Initial network status: ${navigator.onLine ? 'online' : 'offline'}`);
-    
-    // Set up event listeners
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOfflineStatus);
+    } else {
+      // Increment refresh count
+      const count = parseInt(sessionStorage.getItem('refreshCount') || '0');
+      sessionStorage.setItem('refreshCount', (count + 1).toString());
+    }
     
     // Handle service worker updates
     if ('serviceWorker' in navigator) {
@@ -173,54 +224,51 @@ function App() {
         console.log('Service worker controller changed - new content available');
       });
     }
-    
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOfflineStatus);
-    };
   }, []);
 
   return (
     <Router>
-      <AuthProvider>
-        <CartProvider>
-          <SellerAuthProvider>
-            <Toaster />
-            <ScrollToTopOnMount />
-            {isSellerRoute ? (
-              // Seller Routes with full-width layout
-              <Routes>
-                <Route path="/seller/login" element={<SellerLogin />} />
-                <Route path="/seller" element={<DashboardLayout />}>
-                  <Route index element={<Navigate to="/seller/dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="products" element={<SellerProducts />} />
-                  <Route path="add-product" element={<AddProduct />} />
-                  <Route path="edit-product/:productId" element={<EditProduct />} />
-                  <Route path="size-chart" element={<SizeChart />} />
-                  <Route path="orders" element={<Orders />} />
-                  <Route path="completed-orders" element={<CompletedOrders />} />
-                  {/* Add other seller routes here */}
-                </Route>
-              </Routes>
-            ) : (
-              // User Routes with mobile layout
-              <div className="min-h-screen bg-gray-50">
-                <div className="max-w-[480px] mx-auto bg-white min-h-screen relative">
-                  <div className="pb-16">
-                    <AnimatedRoutes />
-                  </div>
-                  <div className="fixed bottom-0 left-0 right-0 z-10">
-                    <div className="max-w-[480px] mx-auto">
-                      <BottomNav />
+      <NetworkStatusProvider>
+        <AuthProvider>
+          <CartProvider>
+            <SellerAuthProvider>
+              <Toaster />
+              <ScrollToTopOnMount />
+              {isSellerRoute ? (
+                // Seller Routes with full-width layout
+                <Routes>
+                  <Route path="/seller/login" element={<SellerLogin />} />
+                  <Route path="/seller" element={<DashboardLayout />}>
+                    <Route index element={<Navigate to="/seller/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="products" element={<SellerProducts />} />
+                    <Route path="add-product" element={<AddProduct />} />
+                    <Route path="edit-product/:productId" element={<EditProduct />} />
+                    <Route path="size-chart" element={<SizeChart />} />
+                    <Route path="orders" element={<Orders />} />
+                    <Route path="completed-orders" element={<CompletedOrders />} />
+                    {/* Add other seller routes here */}
+                  </Route>
+                </Routes>
+              ) : (
+                // User Routes with mobile layout
+                <div className="min-h-screen bg-gray-50">
+                  <div className="max-w-[480px] mx-auto bg-white min-h-screen relative">
+                    <div className="pb-16">
+                      <AnimatedRoutes />
+                    </div>
+                    <div className="fixed bottom-0 left-0 right-0 z-10">
+                      <div className="max-w-[480px] mx-auto">
+                        <BottomNav />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </SellerAuthProvider>
-        </CartProvider>
-      </AuthProvider>
+              )}
+            </SellerAuthProvider>
+          </CartProvider>
+        </AuthProvider>
+      </NetworkStatusProvider>
     </Router>
   );
 }

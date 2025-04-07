@@ -58,68 +58,152 @@
     .online {
       color: green;
     }
+    .hidden {
+      display: none;
+    }
   </style>
   <script>
-    // Network status monitoring
+    // First, check if we should actually show the offline page at all
+    function shouldShowOfflinePage() {
+      // Check if we're actually online - if so, redirect immediately
+      if (navigator.onLine) {
+        window.location.href = '/';
+        return false;
+      }
+      
+      // Only show the offline page if the user has been on the page for a moment
+      // This reduces false positive offline displays
+      const pageLoadTime = new Date().getTime();
+      sessionStorage.setItem('offlinePageShown', pageLoadTime);
+      
+      return true;
+    }
+
+    // Network status monitoring with improved handling
     let isCheckingConnection = false;
     let connectionCheckInterval;
+    let connectionAttempts = 0;
+    const MAX_ATTEMPTS = 3;
 
     // Function to check connection and redirect if online
     function checkConnectionAndRedirect() {
       if (isCheckingConnection) return;
       
       isCheckingConnection = true;
+      connectionAttempts++;
       
-      // Try to fetch a resource from the server
-      fetch('/', { method: 'HEAD', cache: 'no-store' })
+      // Update UI to show we're checking
+      const statusElem = document.getElementById('status');
+      if (statusElem) {
+        statusElem.innerHTML = `Checking connection... (Attempt ${connectionAttempts}/${MAX_ATTEMPTS})`;
+      }
+      
+      // Try to fetch a resource from the server with a random param to avoid cached responses
+      fetch(`/?nocache=${Date.now()}`, { 
+        method: 'HEAD',
+        cache: 'no-store',
+        credentials: 'same-origin',
+        mode: 'no-cors' // Less restrictive mode for offline detection
+      })
         .then(response => {
           isCheckingConnection = false;
-          if (response.ok) {
+          if (response.ok || response.status === 0) { // Status 0 can happen with no-cors mode
             clearInterval(connectionCheckInterval);
-            document.getElementById('status').innerHTML = 'Back online! Redirecting...';
-            document.getElementById('status').className = 'status-indicator online';
+            if (statusElem) {
+              statusElem.innerHTML = 'Back online! Redirecting...';
+              statusElem.className = 'status-indicator online';
+            }
             
             // Store that we're not offline anymore
             sessionStorage.removeItem('wasOffline');
             localStorage.removeItem('offlineMode');
             
-            // Redirect to homepage
+            // Show the offline container briefly to avoid UI flicker
             setTimeout(() => {
               window.location.href = '/';
-            }, 1000);
+            }, 500);
+          } else {
+            if (statusElem) {
+              statusElem.innerHTML = 'Connection detected but app is not responding. Retrying...';
+            }
+            
+            // If we've tried enough times without success, slow down the checks
+            if (connectionAttempts >= MAX_ATTEMPTS) {
+              clearInterval(connectionCheckInterval);
+              connectionCheckInterval = setInterval(checkConnectionAndRedirect, 10000); // Check every 10 seconds
+            }
           }
         })
         .catch(error => {
           isCheckingConnection = false;
           console.log('Still offline', error);
-          document.getElementById('status').innerHTML = 'Still checking connection...';
+          if (statusElem) {
+            statusElem.innerHTML = 'Still offline. Waiting for connection...';
+          }
+          
+          // If we've tried enough times without success, slow down the checks
+          if (connectionAttempts >= MAX_ATTEMPTS) {
+            clearInterval(connectionCheckInterval);
+            connectionCheckInterval = setInterval(checkConnectionAndRedirect, 10000); // Check every 10 seconds
+          }
         });
     }
 
     // Start checking connection status when page loads
     window.addEventListener('load', () => {
+      // First verify we should show the offline page
+      const shouldShow = shouldShowOfflinePage();
+      
+      if (!shouldShow) {
+        return; // The page will redirect automatically
+      }
+      
+      // Show the container now that we've decided to display the offline page
+      document.getElementById('offline-container').classList.remove('hidden');
+      
       // Check immediately
       checkConnectionAndRedirect();
       
-      // Then check periodically
-      connectionCheckInterval = setInterval(checkConnectionAndRedirect, 5000);
+      // Then check periodically (start with frequent checks, slow down later)
+      connectionCheckInterval = setInterval(checkConnectionAndRedirect, 3000);
       
       // Also check when we detect online events
       window.addEventListener('online', () => {
-        document.getElementById('status').innerHTML = 'Connection detected! Checking...';
+        const statusElem = document.getElementById('status');
+        if (statusElem) {
+          statusElem.innerHTML = 'Connection detected! Checking...';
+        }
         checkConnectionAndRedirect();
+      });
+      
+      window.addEventListener('offline', () => {
+        const statusElem = document.getElementById('status');
+        if (statusElem) {
+          statusElem.innerHTML = 'Browser reports offline status';
+        }
       });
     });
     
     // Manual retry button handler
     function manualRetry() {
-      document.getElementById('status').innerHTML = 'Checking connection...';
+      const statusElem = document.getElementById('status');
+      if (statusElem) {
+        statusElem.innerHTML = 'Manually checking connection...';
+      }
+      
+      // Reset connection attempts to give a fresh start
+      connectionAttempts = 0;
+      
+      // Clear any existing interval and set up a fast checking cycle again
+      clearInterval(connectionCheckInterval);
+      connectionCheckInterval = setInterval(checkConnectionAndRedirect, 3000);
+      
       checkConnectionAndRedirect();
     }
   </script>
 </head>
 <body>
-  <div class="container">
+  <div id="offline-container" class="container hidden">
     <div class="icon">📶</div>
     <h1>You're Offline</h1>
     <p>It looks like you've lost your internet connection. Please check your connection and try again.</p>
