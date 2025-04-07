@@ -29,14 +29,24 @@ const Login = () => {
     try {
       if (isSignup) {
         await signup(formData.email, formData.password, formData.full_name);
-        // After successful signup, log them in
-        await login(formData.email, formData.password);
+        // Show a message about email confirmation
+        setError('Please check your email to confirm your account before logging in.');
+        setIsSignup(false);
       } else {
         await login(formData.email, formData.password);
+        navigate('/profile');
       }
-      navigate('/profile');
     } catch (err) {
-      setError(err.message);
+      // Check if the error is related to email confirmation
+      if (err.message && (
+        err.message.toLowerCase().includes('email not confirmed') || 
+        err.message.toLowerCase().includes('email confirmation') ||
+        err.message.toLowerCase().includes('not verified')
+      )) {
+        setError('Please check your email to confirm your account before logging in.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -105,7 +115,9 @@ const Login = () => {
         </div>
 
         {error && (
-          <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+          <div className={`text-sm text-center p-2 rounded ${
+            error.includes('check your email') ? 'text-blue-600 bg-blue-50' : 'text-red-500 bg-red-50'
+          }`}>
             {error}
           </div>
         )}
