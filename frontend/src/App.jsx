@@ -36,6 +36,7 @@ import TermsPage from './pages/user/TermsPage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkInstallationEligibility } from './utils/pwaHelpers';
 import { shouldSkipOfflinePage } from './registerSW';
+import SplashScreen from './components/SplashScreen';
 
 // Animation variants
 const pageVariants = {
@@ -190,9 +191,17 @@ function NetworkStatusProvider({ children }) {
 }
 
 function App() {
-  // Check if the current path is a seller route
+  const [showSplash, setShowSplash] = useState(true);
   const isSellerRoute = window.location.pathname.startsWith('/seller');
-  console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute);
+
+  useEffect(() => {
+    // Show splash screen for 2 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // PWA diagnostics on application start
   useEffect(() => {
@@ -234,6 +243,9 @@ function App() {
             <SellerAuthProvider>
               <Toaster />
               <ScrollToTopOnMount />
+              <AnimatePresence mode="wait">
+                {showSplash && <SplashScreen />}
+              </AnimatePresence>
               {isSellerRoute ? (
                 // Seller Routes with full-width layout
                 <Routes>

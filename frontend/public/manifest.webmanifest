@@ -10,7 +10,7 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/haven.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -18,7 +18,7 @@
   ],
   "screenshots": [
     {
-      "src": "/vite.svg",
+      "src": "/haven.svg",
       "sizes": "1080x1920",
       "type": "image/svg+xml",
       "label": "Genzy Mobile App"
