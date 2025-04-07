@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
+import { useEffect } from 'react';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
 import Search from './pages/user/Search';
@@ -33,6 +34,7 @@ import ContactPage from './pages/user/ContactPage';
 import PrivacyPage from './pages/user/PrivacyPage';
 import TermsPage from './pages/user/TermsPage';
 import { AnimatePresence, motion } from 'framer-motion';
+import { checkInstallationEligibility } from './utils/pwaHelpers';
 
 // Animation variants
 const pageVariants = {
@@ -136,6 +138,47 @@ function App() {
   // Check if the current path is a seller route
   const isSellerRoute = window.location.pathname.startsWith('/seller');
   console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute);
+
+  // PWA diagnostics on application start
+  useEffect(() => {
+    // Check if PWA requirements are met and log diagnostics
+    const pwaStatus = checkInstallationEligibility();
+    console.log('PWA STATUS:', pwaStatus);
+    
+    // Handle online/offline events at the application level
+    const handleOnlineStatus = () => {
+      console.log('App is online');
+      // If the app was offline and is now coming online, refresh content
+      if (sessionStorage.getItem('wasOffline') === 'true') {
+        console.log('Recovering from offline state');
+        sessionStorage.setItem('wasOffline', 'false');
+      }
+    };
+    
+    const handleOfflineStatus = () => {
+      console.log('App is offline');
+      sessionStorage.setItem('wasOffline', 'true');
+    };
+    
+    // Log initial status
+    console.log(`Initial network status: ${navigator.onLine ? 'online' : 'offline'}`);
+    
+    // Set up event listeners
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOfflineStatus);
+    
+    // Handle service worker updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('Service worker controller changed - new content available');
+      });
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOfflineStatus);
+    };
+  }, []);
 
   return (
     <Router>

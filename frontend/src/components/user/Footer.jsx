@@ -9,10 +9,26 @@ const Footer = () => {
 
   // Listen for the beforeinstallprompt event
   useEffect(() => {
+    console.log("PWA DEBUG: Footer component mounted, setting up event listeners");
+    
+    // For debugging - check if already in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log("PWA DEBUG: App is already running in standalone mode");
+      setIsInstallable(false);
+    } else {
+      console.log("PWA DEBUG: App is running in browser mode, can potentially be installed");
+    }
+
+    // Force isInstallable to true for testing on production
+    // Comment this out after debugging
+    console.log("PWA DEBUG: Forcing installable to true for testing");
+    setIsInstallable(true);
+    
     const handleBeforeInstallPrompt = (e) => {
       // Prevent the default browser install prompt
       e.preventDefault();
       // Save the event for later use
+      console.log("PWA DEBUG: beforeinstallprompt event fired!", e);
       setDeferredPrompt(e);
       // Update UI to show the install button
       setIsInstallable(true);
@@ -20,19 +36,27 @@ const Footer = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Also log if the app gets installed
+    window.addEventListener('appinstalled', (event) => {
+      console.log('PWA DEBUG: App was installed', event);
       setIsInstallable(false);
-    }
+    });
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', () => {});
     };
   }, []);
 
   // Handle install button click
   const handleInstallClick = () => {
-    if (!deferredPrompt) return;
+    console.log("PWA DEBUG: Install button clicked, deferredPrompt:", deferredPrompt);
+    
+    if (!deferredPrompt) {
+      console.log("PWA DEBUG: No deferred prompt available, trying manual install");
+      alert("Installation prompt not available. Please use your browser's 'Add to Home Screen' or 'Install' option from the menu.");
+      return;
+    }
 
     // Show the install prompt
     deferredPrompt.prompt();
@@ -40,10 +64,10 @@ const Footer = () => {
     // Wait for the user to respond to the prompt
     deferredPrompt.userChoice.then((choiceResult) => {
       if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
+        console.log('PWA DEBUG: User accepted the install prompt');
         setIsInstallable(false);
       } else {
-        console.log('User dismissed the install prompt');
+        console.log('PWA DEBUG: User dismissed the install prompt');
       }
       // Clear the saved prompt
       setDeferredPrompt(null);

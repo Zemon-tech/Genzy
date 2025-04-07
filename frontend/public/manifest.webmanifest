@@ -6,6 +6,8 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
+  "id": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -31,5 +33,9 @@
   ],
   "categories": ["shopping", "ecommerce", "fashion"],
   "prefer_related_applications": false,
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "handle_links": "preferred"
 } 
