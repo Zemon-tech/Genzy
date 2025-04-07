@@ -10,24 +10,17 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/icons/screenshot.png",
+      "src": "/vite.svg",
       "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
+      "type": "image/svg+xml",
       "label": "Genzy Mobile App"
     }
   ],

@@ -11,16 +11,17 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate', 
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'offline.html'],
-      manifest: false,
+      manifest: false, // We're using our own manifest file
       injectRegister: 'auto',
-      strategies: 'generateSW',
+      strategies: 'generateSW', 
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,json}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        cleanupOutdatedCaches: true, 
+        clientsClaim: true, 
+        skipWaiting: true, 
+        navigationPreload: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -73,18 +74,29 @@ export default defineConfig({
               networkTimeoutSeconds: 10
             }
           },
+          // Add a general cache for all navigation requests (HTML)
           {
-            urlPattern: /.*\/$/,
+            urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'html-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              networkTimeoutSeconds: 5
+              cacheName: 'navigation-cache',
+              networkTimeoutSeconds: 5, 
+              plugins: [
+                {
+                  // Custom handling for offline mode
+                  handlerDidError: async () => {
+                    if (!navigator.onLine) {
+                      return await caches.match('/offline.html');
+                    }
+                    
+                    // Always fallback to offline page on error
+                    return await caches.match('/offline.html');
+                  }
+                }
+              ]
             }
           },
+          // Cache JS and CSS 
           {
             urlPattern: /\.(?:js|css)$/i,
             handler: 'StaleWhileRevalidate',
@@ -97,12 +109,12 @@ export default defineConfig({
             }
           }
         ],
+        // Update offline fallback settings
         navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/\/api\//],
-        skipWaiting: true,
-        clientsClaim: true
+        navigateFallbackDenylist: [/\/api\//], // Don't use fallback for API calls
       },
       devOptions: {
+        // Enable PWA in development
         enabled: true,
         type: 'module',
         navigateFallback: 'index.html'

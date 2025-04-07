@@ -50,7 +50,73 @@
     .button:hover {
       background-color: #333;
     }
+    .status-indicator {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    .online {
+      color: green;
+    }
   </style>
+  <script>
+    // Network status monitoring
+    let isCheckingConnection = false;
+    let connectionCheckInterval;
+
+    // Function to check connection and redirect if online
+    function checkConnectionAndRedirect() {
+      if (isCheckingConnection) return;
+      
+      isCheckingConnection = true;
+      
+      // Try to fetch a resource from the server
+      fetch('/', { method: 'HEAD', cache: 'no-store' })
+        .then(response => {
+          isCheckingConnection = false;
+          if (response.ok) {
+            clearInterval(connectionCheckInterval);
+            document.getElementById('status').innerHTML = 'Back online! Redirecting...';
+            document.getElementById('status').className = 'status-indicator online';
+            
+            // Store that we're not offline anymore
+            sessionStorage.removeItem('wasOffline');
+            localStorage.removeItem('offlineMode');
+            
+            // Redirect to homepage
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          }
+        })
+        .catch(error => {
+          isCheckingConnection = false;
+          console.log('Still offline', error);
+          document.getElementById('status').innerHTML = 'Still checking connection...';
+        });
+    }
+
+    // Start checking connection status when page loads
+    window.addEventListener('load', () => {
+      // Check immediately
+      checkConnectionAndRedirect();
+      
+      // Then check periodically
+      connectionCheckInterval = setInterval(checkConnectionAndRedirect, 5000);
+      
+      // Also check when we detect online events
+      window.addEventListener('online', () => {
+        document.getElementById('status').innerHTML = 'Connection detected! Checking...';
+        checkConnectionAndRedirect();
+      });
+    });
+    
+    // Manual retry button handler
+    function manualRetry() {
+      document.getElementById('status').innerHTML = 'Checking connection...';
+      checkConnectionAndRedirect();
+    }
+  </script>
 </head>
 <body>
   <div class="container">
@@ -58,7 +124,8 @@
     <h1>You're Offline</h1>
     <p>It looks like you've lost your internet connection. Please check your connection and try again.</p>
     <p>Don't worry, Genzy will automatically reconnect when you're back online.</p>
-    <button class="button" onclick="window.location.reload()">Try Again</button>
+    <button class="button" onclick="manualRetry()">Try Again</button>
+    <div id="status" class="status-indicator">Checking connection status...</div>
   </div>
 </body>
 </html> 

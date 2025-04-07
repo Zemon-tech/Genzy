@@ -1,11 +1,19 @@
 import { Link } from 'react-router-dom';
 import { Instagram, Mail, Share2, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { showManualInstallInstructions } from '../../utils/pwaHelpers';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstallable, setIsInstallable] = useState(true); // Always show install button
+  const [installInstructions, setInstallInstructions] = useState('');
+
+  // Get browser-specific install instructions
+  useEffect(() => {
+    const instructions = showManualInstallInstructions();
+    setInstallInstructions(instructions.message);
+  }, []);
 
   // Listen for the beforeinstallprompt event
   useEffect(() => {
@@ -14,15 +22,11 @@ const Footer = () => {
     // For debugging - check if already in standalone mode
     if (window.matchMedia('(display-mode: standalone)').matches) {
       console.log("PWA DEBUG: App is already running in standalone mode");
-      setIsInstallable(false);
+      // Even if it's in standalone mode, we still show the button
+      // But we'll show a different message when clicked
     } else {
       console.log("PWA DEBUG: App is running in browser mode, can potentially be installed");
     }
-
-    // Force isInstallable to true for testing on production
-    // Comment this out after debugging
-    console.log("PWA DEBUG: Forcing installable to true for testing");
-    setIsInstallable(true);
     
     const handleBeforeInstallPrompt = (e) => {
       // Prevent the default browser install prompt
@@ -30,8 +34,6 @@ const Footer = () => {
       // Save the event for later use
       console.log("PWA DEBUG: beforeinstallprompt event fired!", e);
       setDeferredPrompt(e);
-      // Update UI to show the install button
-      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -39,7 +41,6 @@ const Footer = () => {
     // Also log if the app gets installed
     window.addEventListener('appinstalled', (event) => {
       console.log('PWA DEBUG: App was installed', event);
-      setIsInstallable(false);
     });
 
     return () => {
@@ -53,8 +54,8 @@ const Footer = () => {
     console.log("PWA DEBUG: Install button clicked, deferredPrompt:", deferredPrompt);
     
     if (!deferredPrompt) {
-      console.log("PWA DEBUG: No deferred prompt available, trying manual install");
-      alert("Installation prompt not available. Please use your browser's 'Add to Home Screen' or 'Install' option from the menu.");
+      console.log("PWA DEBUG: No deferred prompt available, showing manual install instructions");
+      alert(installInstructions);
       return;
     }
 
@@ -65,7 +66,6 @@ const Footer = () => {
     deferredPrompt.userChoice.then((choiceResult) => {
       if (choiceResult.outcome === 'accepted') {
         console.log('PWA DEBUG: User accepted the install prompt');
-        setIsInstallable(false);
       } else {
         console.log('PWA DEBUG: User dismissed the install prompt');
       }
@@ -91,21 +91,27 @@ const Footer = () => {
     }
   };
 
+  // Check if we're already in standalone mode
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const installButtonText = isStandalone ? "Already Installed" : "Install App";
+
   return (
     <footer className="bg-gradient-to-b from-gray-900 to-black text-white pt-10 pb-12 mb-0">
       <div className="px-6 max-w-[480px] mx-auto">
-        {/* Install App Button - Only shows when installable */}
-        {isInstallable && (
-          <div className="mb-8 flex justify-center">
-            <button
-              onClick={handleInstallClick}
-              className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-            >
-              <Download size={18} />
-              Install App
-            </button>
-          </div>
-        )}
+        {/* Install App Button - Always show */}
+        <div className="mb-8 flex justify-center">
+          <button
+            onClick={handleInstallClick}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
+              isStandalone 
+                ? "bg-gray-200 text-gray-500" 
+                : "bg-white text-black hover:bg-gray-100"
+            }`}
+          >
+            <Download size={18} />
+            {installButtonText}
+          </button>
+        </div>
         
         {/* Social Media Links */}
         <div className="flex justify-center gap-4 mb-8">
