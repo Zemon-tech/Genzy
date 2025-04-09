@@ -1,16 +1,16 @@
 {
-  "name": "Genzy",
-  "short_name": "Genzy",
-  "description": "Genzy - Your Fashion Destination",
+  "name": "Haven",
+  "short_name": "Haven",
+  "description": "Haven - Your Fashion Destination",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#292828",
   "theme_color": "#000000",
   "id": "/",
   "scope": "/",
   "icons": [
     {
-      "src": "/haven.svg",
+      "src": "/logo-svg.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -18,10 +18,10 @@
   ],
   "screenshots": [
     {
-      "src": "/haven.svg",
+      "src": "/logo-svg.svg",
       "sizes": "1080x1920",
       "type": "image/svg+xml",
-      "label": "Genzy Mobile App"
+      "label": "Haven Mobile App"
     }
   ],
   "categories": ["shopping", "ecommerce", "fashion"],

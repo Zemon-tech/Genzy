@@ -177,7 +177,7 @@ const Footer = () => {
         
         {/* Copyright */}
         <div className="text-center text-gray-400 text-xs border-t border-gray-800 pt-6">
-          <p>© {currentYear} Genzy. All rights reserved.</p>
+          <p>© {currentYear} Haven. All rights reserved.</p>
           <p className="mt-2">
             Made in India
           </p>

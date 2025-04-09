@@ -25,10 +25,10 @@ const TermsPage = () => {
             <section className="mb-6">
               <h2 className="text-xl font-bold mb-3">Introduction</h2>
               <p className="mb-3">
-                Welcome to Genzy. These terms and conditions outline the rules and regulations for the use of our website and services.
+                Welcome to Haven. These terms and conditions outline the rules and regulations for the use of our website and services.
               </p>
               <p>
-                By accessing this website, we assume you accept these terms and conditions in full. Do not continue to use Genzy 
+                By accessing this website, we assume you accept these terms and conditions in full. Do not continue to use Haven 
                 if you do not accept all of the terms and conditions stated on this page.
               </p>
             </section>
@@ -36,12 +36,12 @@ const TermsPage = () => {
             <section className="mb-6">
               <h2 className="text-xl font-bold mb-3">Products and Services</h2>
               <p className="mb-3">
-                Genzy is a marketplace that connects customers with various brands and sellers. All products sold on our platform 
+                Haven is a marketplace that connects customers with various brands and sellers. All products sold on our platform 
                 are provided by independent sellers or brands. The availability, quality, description, and content of products 
                 depend on the respective brands and sellers.
               </p>
               <p className="mb-3">
-                <strong>Important Note:</strong> Genzy relies on information provided by sellers for product descriptions, images, 
+                <strong>Important Note:</strong> Haven relies on information provided by sellers for product descriptions, images, 
                 specifications, and pricing. While we make reasonable efforts to verify this information, we cannot guarantee its 
                 complete accuracy. Product availability is subject to change without prior notice.
               </p>
@@ -100,8 +100,8 @@ const TermsPage = () => {
               <h2 className="text-xl font-bold mb-3">Intellectual Property</h2>
               <p>
                 The content on this website, including without limitation the text, graphics, logos, icons, images, audio clips, digital downloads, 
-                and software, is the property of Genzy or its content suppliers and is protected by international copyright laws. The compilation of 
-                all content on this site is the exclusive property of Genzy and is protected by international copyright laws.
+                and software, is the property of Haven or its content suppliers and is protected by international copyright laws. The compilation of 
+                all content on this site is the exclusive property of Haven and is protected by international copyright laws.
               </p>
             </section>
 
@@ -109,8 +109,8 @@ const TermsPage = () => {
               <h2 className="text-xl font-bold mb-3">Contact Us</h2>
               <p>
                 If you have any questions about these Terms and Conditions, please contact us at{' '}
-                <a href="mailto:madhavvarshney1879@gmail.com" className="text-indigo-600 hover:text-indigo-800">
-                  madhavvarshney1879@gmail.com
+                <a href="mailto:nameste.kayo@gmail.com" className="text-indigo-600 hover:text-indigo-800">
+                  nameste.kayo@gmail.com
                 </a>
                 .
               </p>

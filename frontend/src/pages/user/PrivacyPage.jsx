@@ -25,7 +25,7 @@ const PrivacyPage = () => {
             <section className="mb-6">
               <h2 className="text-xl font-bold mb-3">Introduction</h2>
               <p className="mb-3">
-                Genzy (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data. 
+                Haven (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data. 
                 This privacy policy will inform you about how we look after your personal data when you visit our website and tell 
                 you about your privacy rights and how the law protects you.
               </p>
@@ -91,8 +91,8 @@ const PrivacyPage = () => {
               <h2 className="text-xl font-bold mb-3">Contact Us</h2>
               <p>
                 If you have any questions about this privacy policy or our privacy practices, please contact us at{' '}
-                <a href="mailto:madhavvarshney1879@gmail.com" className="text-indigo-600 hover:text-indigo-800">
-                  madhavvarshney1879@gmail.com
+                <a href="mailto:nameste.kayo@gmail.com" className="text-indigo-600 hover:text-indigo-800">
+                  nameste.kayo@gmail.com
                 </a>
                 .
               </p>
