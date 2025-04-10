@@ -4,9 +4,9 @@ import Footer from '../../components/user/Footer';
 
 const ContactPage = () => {
   const contactInfo = {
-    phone: "+91 ..........",
+    phone: "+91 7840069938",
     email: "nameste.kayo@gmail.com",
-    instagram: "@genzy", // Replace with actual handle
+    instagram: "@haven", // Replace with actual handle
     address: "New Delhi, India",
     businessHours: "Monday - Saturday: 10:00 AM - 7:00 PM"
   };

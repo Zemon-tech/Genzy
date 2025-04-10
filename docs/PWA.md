@@ -1,6 +1,6 @@
-# Progressive Web App (PWA) Implementation for Genzy
+# Progressive Web App (PWA) Implementation for Haven
 
-This document outlines the Progressive Web App implementation for the Genzy e-commerce platform.
+This document outlines the Progressive Web App implementation for the Haven e-commerce platform.
 
 ## Features Implemented
 

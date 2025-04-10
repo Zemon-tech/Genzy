@@ -1,6 +1,6 @@
 # Deployment Guide: Cloudflare Pages (Frontend) & Fly.io (Backend)
 
-This guide provides instructions for deploying the Genzy application with:
+This guide provides instructions for deploying the Haven application with:
 - Frontend on Cloudflare Pages
 - Backend on Fly.io
 
@@ -28,10 +28,10 @@ This guide provides instructions for deploying the Genzy application with:
    - In the Cloudflare dashboard, click on "Pages" in the sidebar
    - Click "Create a project" > "Connect to Git"
    - Connect to your GitHub/GitLab repository containing your project
-   - Select the repository containing your Genzy project
+   - Select the repository containing your Haven project
 
 4. **Configure build settings**
-   - **Project name**: `genzy` (or your preferred name)
+   - **Project name**: `haven` (or your preferred name)
    - **Production branch**: `main` (or your default branch)
    - **Framework preset**: Select "Vite"
    - **Build command**: `npm run build`
@@ -41,7 +41,7 @@ This guide provides instructions for deploying the Genzy application with:
 5. **Environment variables**
    - Add any required environment variables from your frontend `.env` file
    - Particularly important: set your backend API URL to point to your Fly.io deployment
-   - For example: `VITE_API_URL=https://genzy-backend.fly.dev`
+   - For example: `VITE_API_URL=https://haven-backend.fly.dev`
 
 6. **Deploy**
    - Click "Save and Deploy"
@@ -74,7 +74,7 @@ This guide provides instructions for deploying the Genzy application with:
 3. **Create a fly.toml configuration file in your backend directory**
    Create a file `backend/fly.toml` with the following content:
    ```toml
-   app = "genzy-backend"
+   app = "haven-backend"
    primary_region = "fra"  # Choose your preferred region
 
    [build]
@@ -113,7 +113,7 @@ This guide provides instructions for deploying the Genzy application with:
 6. **Deploy to Fly.io**
    ```bash
    cd backend
-   fly launch --name genzy-backend
+   fly launch --name haven-backend
    ```
    Follow the prompts. When asked if you want to use an existing `fly.toml` file, select yes.
 
@@ -145,7 +145,7 @@ This guide provides instructions for deploying the Genzy application with:
    Update the API URL in your frontend environment variables on Cloudflare Pages to point to your Fly.io backend:
    - Go to your Pages project in the Cloudflare dashboard
    - Navigate to "Settings" > "Environment variables"
-   - Add or update the API URL variable: `VITE_API_URL=https://genzy-backend.fly.dev`
+   - Add or update the API URL variable: `VITE_API_URL=https://haven-backend.fly.dev`
 
 2. **Redeploy your frontend**
    - Trigger a new deployment from the Cloudflare Pages dashboard

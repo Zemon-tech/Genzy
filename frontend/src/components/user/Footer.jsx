@@ -6,7 +6,6 @@ import { showManualInstallInstructions } from '../../utils/pwaHelpers';
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstallable, setIsInstallable] = useState(true); // Always show install button
   const [installInstructions, setInstallInstructions] = useState('');
 
   // Get browser-specific install instructions
@@ -78,7 +77,7 @@ const Footer = () => {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Genzy Fashion',
+        title: 'Haven Fashion',
         text: 'Check out these amazing fashion products!',
         url: window.location.origin,
       })
@@ -96,7 +95,7 @@ const Footer = () => {
   const installButtonText = isStandalone ? "Already Installed" : "Install App";
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-black text-white pt-10 pb-12 mb-0">
+    <footer className="bg-gradient-to-b from-gray-900 to-customBlack text-white pt-10 pb-12 mb-0">
       <div className="px-6 max-w-[480px] mx-auto">
         {/* Install App Button - Always show */}
         <div className="mb-8 flex justify-center">
@@ -105,7 +104,7 @@ const Footer = () => {
             className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
               isStandalone 
                 ? "bg-gray-200 text-gray-500" 
-                : "bg-white text-black hover:bg-gray-100"
+                : "bg-white text-customBlack hover:bg-gray-100"
             }`}
           >
             <Download size={18} />
@@ -114,7 +113,7 @@ const Footer = () => {
         </div>
         
         {/* Social Media Links */}
-        <div className="flex justify-center gap-4 mb-8">
+        <div className="flex justify-center gap-4 mb-1">
           <a 
             href="https://instagram.com" 
             target="_blank" 
@@ -141,6 +140,11 @@ const Footer = () => {
           </a>
         </div>
 
+        {/* Tagline */}
+        <div className="text-center mb-4">
+          <p className="text-white/90 text-sm font-medium tracking-widest">Your style ✦ Your era ✦ Your haven</p>
+        </div>
+        
         {/* Quick Links */}
         <div className="grid grid-cols-2 gap-y-3 mb-8 text-sm">
           <div className="space-y-3">

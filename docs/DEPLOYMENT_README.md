@@ -1,6 +1,6 @@
-# Genzy Deployment Guide
+# Haven Deployment Guide
 
-This is a quick-start guide for deploying Genzy with:
+This is a quick-start guide for deploying Haven with:
 - Frontend on Cloudflare Pages
 - Backend on Fly.io
 
@@ -21,7 +21,7 @@ fly auth login
 cd backend
 
 # Launch the app (first time only)
-fly launch --name genzy-backend
+fly launch --name haven-backend
 
 # Set your environment variables
 fly secrets set SUPABASE_URL=your_supabase_url
@@ -44,7 +44,7 @@ fly status
    - **Root directory**: `frontend`
 3. Set environment variables:
    - Use `cloudflare.env.example` as a reference
-   - Make sure to set `VITE_BACKEND_URL=https://genzy-backend.fly.dev`
+   - Make sure to set `VITE_BACKEND_URL=https://haven-backend.fly.dev`
 4. Deploy
 
 ### 4. Important Files
@@ -66,4 +66,12 @@ For detailed step-by-step instructions, see `DEPLOYMENT_GUIDE.md`
 
 - **CORS Issues**: Ensure your backend allows your Cloudflare domain
 - **Environment Variables**: Check they're correctly set in both platforms
-- **Build Failures**: Verify your build commands and dependencies 
+- **Build Failures**: Verify your build commands and dependencies
+
+## 5. Frontend Configuration
+
+In your frontend `.env` file, configure the API URL:
+
+```
+VITE_API_URL=https://haven-backend.fly.dev
+``` 

@@ -14,11 +14,11 @@ const PUBLIC_DIR = path.join(__dirname, '../public');
 const ICONS_DIR = path.join(PUBLIC_DIR, 'icons');
 
 // Create a basic PNG icon using a data URL
-// This is a simple black square with a white 'G' for Genzy
+// This is a simple black square with a white 'H' for Haven
 // In a production app, you'd use a proper image processing library like Sharp
 function generateIcon(size) {
-  // Create a black square base64 PNG with the letter G
-  // The following is a pre-encoded minimal PNG for a black square with "G" in white
+  // Create a black square base64 PNG with the letter H
+  // The following is a pre-encoded minimal PNG for a black square with "H" in white
   // It's a very basic image but will satisfy PWA requirements
   const baseIcon = 
     'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAB1SURBVHhe7cExAQAAAMKg9U9tDQ8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALgaKhwAAegqmfwAAAAASUVORK5CYII=';

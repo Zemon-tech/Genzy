@@ -1,6 +1,6 @@
-# Deploying Genzy to Cloudflare
+# Deploying Haven to Cloudflare
 
-This guide provides step-by-step instructions for deploying the Genzy application to Cloudflare. The application consists of a React frontend and a Node.js backend.
+This guide provides step-by-step instructions for deploying the Haven application to Cloudflare. The application consists of a React frontend and a Node.js backend.
 
 ## 1. Deploying the Frontend to Cloudflare Pages
 
@@ -26,10 +26,10 @@ This guide provides step-by-step instructions for deploying the Genzy applicatio
    - In the Cloudflare dashboard, click on "Pages" in the sidebar
    - Click "Create a project" > "Connect to Git"
    - Connect to your GitHub/GitLab repository containing your project
-   - Select the repository containing your Genzy project
+   - Select the repository containing your Haven project
 
 4. **Configure build settings**
-   - **Project name**: `genzy` (or your preferred name)
+   - **Project name**: `haven` (or your preferred name)
    - **Production branch**: `main` (or your default branch)
    - **Framework preset**: Select "Vite"
    - **Build command**: `npm run build`
@@ -99,7 +99,7 @@ This guide provides step-by-step instructions for deploying the Genzy applicatio
 
 1. **Update API endpoints in your frontend**
    - In your frontend code, update all API endpoint URLs to point to your Cloudflare Worker URL
-   - Example: `https://genzy-backend.your-username.workers.dev`
+   - Example: `https://haven-backend.your-username.workers.dev`
 
 2. **Redeploy your frontend**
    - After updating your API endpoints, redeploy your frontend to Cloudflare Pages

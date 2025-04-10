@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import ImageCarousel from '../../components/ImageCarousel';
 import supabase from '../../config/supabase';
-import { Link, useNavigate, useNavigationType } from 'react-router-dom';
+import { Link, useNavigationType } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
-import { HiSearch } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../../components/user/Footer';
 import { CATEGORIES, CATEGORY_IMAGES } from '../../utils/constants';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
-  const navigate = useNavigate();
   
   const carouselSlides = [
     {
@@ -19,12 +17,6 @@ const Home = () => {
         <>
           <h1 className="text-4xl font-bold mb-3">New Season Arrivals</h1>
           <p className="text-lg mb-6 opacity-90">Discover the latest trends in fashion</p>
-          <Link 
-            to="/search" 
-            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-          >
-            Shop Now
-          </Link>
         </>
       )
     },
@@ -34,12 +26,6 @@ const Home = () => {
         <>
           <h1 className="text-4xl font-bold mb-3">Summer Collection 2024</h1>
           <p className="text-lg mb-6 opacity-90">Beat the heat with our cool collection</p>
-          <Link 
-            to="/search?category=summer" 
-            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-          >
-            Explore Summer
-          </Link>
         </>
       )
     },
@@ -49,12 +35,6 @@ const Home = () => {
         <>
           <h1 className="text-4xl font-bold mb-3">Exclusive Brands</h1>
           <p className="text-lg mb-6 opacity-90">Shop your favorite designer brands</p>
-          <Link 
-            to="/search?type=premium" 
-            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-          >
-            View Brands
-          </Link>
         </>
       )
     },
@@ -64,12 +44,6 @@ const Home = () => {
         <>
           <h1 className="text-4xl font-bold mb-3">Trending Now</h1>
           <p className="text-lg mb-6 opacity-90">Stay ahead with the latest fashion trends</p>
-          <Link 
-            to="/search?sort=trending" 
-            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-          >
-            Shop Trending
-          </Link>
         </>
       )
     },
@@ -79,12 +53,6 @@ const Home = () => {
         <>
           <h1 className="text-4xl font-bold mb-3">Special Offers</h1>
           <p className="text-lg mb-6 opacity-90">Up to 50% off on selected items</p>
-          <Link 
-            to="/search?discount=true" 
-            className="inline-block bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-          >
-            View Offers
-          </Link>
         </>
       )
     }
@@ -183,35 +151,33 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       <div className="max-w-[480px] mx-auto bg-white min-h-screen">
         {/* Hero Section */}
-        <div className="h-[85vh] relative">
-          {/* Search Bar Overlay */}
-          <div className="absolute top-4 left-0 right-0 z-10 px-4">
-            <div 
-              onClick={() => navigate('/search')} 
-              className="relative cursor-pointer"
-            >
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="w-full pl-10 pr-4 py-3.5 bg-black/40 backdrop-blur-md border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none shadow-lg"
-                readOnly
-              />
-              <HiSearch className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-white/70 w-5 h-5" />
-            </div>
-          </div>
-
+        <div className="h-[70vh] relative">
           {/* Carousel Section */}
           <div className="h-full">
+            {/* SVG Logo - Added directly to carousel */}
+            <div className="absolute top-6 left-0 right-0 z-20 flex justify-center pr-1">
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/photologo.svg" 
+                  alt="Brand Logo" 
+                  className="h-16 object-contain z-20 drop-shadow-lg"
+                />
+              </div>
+            </div>
+            
+            {/* Dark gradient overlay for top of carousel */}
+            <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[#292728]/80 via-[#292728]/50 to-transparent z-10"></div>
+            
             <ImageCarousel 
               images={carouselSlides.map(slide => slide.image)}
               slides={carouselSlides.map((slide, index) => (
                 <div key={index} className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold mb-1">{slide.content.props.children[0].props.children}</h1>
-                  <p className="text-sm mb-3 opacity-90">{slide.content.props.children[1].props.children}</p>
-                  {slide.content.props.children[2]}
+                  <h1 className="text-xl font-bold mb-1 text-white/70">{slide.content.props.children[0].props.children}</h1>
+                  <p className="text-xs mb-2 text-white/60">{slide.content.props.children[1].props.children}</p>
                 </div>
               ))}
               autoPlayInterval={5000}
+              showArrows={false}
             />
           </div>
         </div>
@@ -235,7 +201,7 @@ const Home = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/80">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#292728]/5 via-[#292728]/20 to-[#292728]/80">
                   <div className="absolute bottom-4 left-4 right-4">
                     <h3 className="text-white font-bold text-xl mb-1">
                       {category.name}
@@ -271,7 +237,7 @@ const Home = () => {
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#292728]/60">
                       <div className="absolute bottom-2.5 left-2.5 right-2.5">
                         <h3 className="text-white font-medium text-sm">
                           {category.name}

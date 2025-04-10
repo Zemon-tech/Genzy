@@ -1,6 +1,6 @@
-# Deployment Guide for Genzy
+# Deployment Guide for Haven
 
-This guide will walk you through deploying your Genzy application with Cloudflare Pages (frontend) and Railway (backend).
+This guide will walk you through deploying your Haven application with Cloudflare Pages (frontend) and Railway (backend).
 
 ## Prerequisites
 

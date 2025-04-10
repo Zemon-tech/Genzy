@@ -308,7 +308,7 @@ const Cart = () => {
               onClick={() => setActiveTab('cart')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${
                 activeTab === 'cart'
-                  ? 'bg-black text-white shadow-lg'
+                  ? 'bg-customBlack text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -319,7 +319,7 @@ const Cart = () => {
               onClick={() => setActiveTab('wishlist')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${
                 activeTab === 'wishlist'
-                  ? 'bg-black text-white shadow-lg'
+                  ? 'bg-customBlack text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -477,7 +477,7 @@ const Cart = () => {
                         <div className="flex items-center justify-center mt-2">
                           <button 
                             onClick={handleProceedToCheckout}
-                            className="w-full flex items-center justify-center gap-2 bg-black text-white py-4 rounded-lg hover:bg-gray-900 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 bg-customBlack text-white py-4 rounded-lg hover:bg-gray-900 transition-colors"
                           >
                             <CreditCard className="w-5 h-5" />
                             <span>Proceed to Checkout</span>

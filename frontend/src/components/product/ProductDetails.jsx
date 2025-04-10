@@ -174,7 +174,7 @@ const ProductDetails = ({
             onClick={() => setSelectedSize(size)}
             className={`py-3 text-sm font-medium border rounded-md transition-colors
               ${selectedSize === size
-                ? 'border-black bg-black text-white'
+                ? 'border-customBlack bg-customBlack text-white'
                 : 'border-gray-300 hover:border-gray-900'
               }`}
           >
@@ -193,7 +193,7 @@ const ProductDetails = ({
               onClick={() => setSelectedColor(color)}
               className={`w-10 h-10 rounded-full border-2 transition-all
                 ${selectedColor === color 
-                  ? 'border-black scale-110' 
+                  ? 'border-customBlack scale-110' 
                   : 'border-transparent hover:scale-110'
                 }`}
             >
@@ -230,7 +230,7 @@ const ProductDetails = ({
       <div className="space-y-4 pt-4">
         <button
           onClick={handleAddToCart}
-          className="w-full bg-black text-white py-4 rounded-full hover:bg-gray-900 transition-colors"
+          className="w-full bg-customBlack text-white py-4 rounded-full hover:bg-gray-900 transition-colors"
           disabled={loading}
         >
           {loading ? 'Loading...' : 'Add to Cart'}

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import PropTypes from 'prop-types';
 
-const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
+const ImageCarousel = ({ images, slides, autoPlayInterval = 5000, showArrows = true }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1); // 1 for next, -1 for previous
   const [isPressed, setIsPressed] = useState(false);
@@ -86,28 +86,23 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
 
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 0.8,
-      scale: 0.95
+      x: direction > 0 ? "5%" : "-5%",
+      opacity: 0.5
     }),
     center: {
       x: 0,
       opacity: 1,
-      scale: 1,
       transition: {
-        x: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
-        scale: { duration: 0.2 }
+        x: { type: "tween", duration: 0.5 },
+        opacity: { duration: 0.5 }
       }
     },
     exit: (direction) => ({
-      x: direction > 0 ? "-100%" : "100%",
-      opacity: 0.8,
-      scale: 0.95,
+      x: direction > 0 ? "-5%" : "5%",
+      opacity: 0.5,
       transition: {
-        x: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
-        scale: { duration: 0.2 }
+        x: { type: "tween", duration: 0.5 },
+        opacity: { duration: 0.5 }
       }
     })
   };
@@ -165,18 +160,22 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
       </AnimatePresence>
 
       {/* Navigation Buttons */}
-      <button
-        onClick={() => handleManualNavigation(prevSlide)}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors z-10"
-      >
-        <HiChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        onClick={() => handleManualNavigation(manualNextSlide)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors z-10"
-      >
-        <HiChevronRight className="w-6 h-6" />
-      </button>
+      {showArrows && (
+        <>
+          <button
+            onClick={() => handleManualNavigation(prevSlide)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors z-10"
+          >
+            <HiChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => handleManualNavigation(manualNextSlide)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white/90 hover:bg-black/40 transition-colors z-10"
+          >
+            <HiChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
 
       {/* Updated Dots Navigation - Moved closer to bottom */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
@@ -214,7 +213,8 @@ const ImageCarousel = ({ images, slides, autoPlayInterval = 5000 }) => {
 ImageCarousel.propTypes = {
   images: PropTypes.arrayOf(PropTypes.string).isRequired,
   slides: PropTypes.arrayOf(PropTypes.node).isRequired,
-  autoPlayInterval: PropTypes.number
+  autoPlayInterval: PropTypes.number,
+  showArrows: PropTypes.bool
 };
 
 export default ImageCarousel; 

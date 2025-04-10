@@ -1,7 +1,7 @@
 {
-  "name": "genzy-app",
+  "name": "haven-app",
   "version": "1.0.0",
-  "description": "Genzy application",
+  "description": "Haven application",
   "main": "backend/server.js",
   "type": "module",
   "scripts": {

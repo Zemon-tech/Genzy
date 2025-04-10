@@ -89,15 +89,15 @@ const BottomNav = () => {
               <div 
                 className={`p-2 rounded-xl transition-all duration-200 ${
                   isActive 
-                    ? 'bg-black text-white scale-110' 
-                    : 'text-gray-500 hover:text-black hover:bg-gray-100'
+                    ? 'bg-customBlack text-white scale-110' 
+                    : 'text-gray-500 hover:text-customBlack hover:bg-gray-100'
                 }`}
               >
                 <Icon className="w-5 h-5" />
               </div>
               <span 
                 className={`text-xs mt-1 font-medium ${
-                  isActive ? 'text-black' : 'text-gray-500'
+                  isActive ? 'text-customBlack' : 'text-gray-500'
                 }`}
               >
                 {item.label}

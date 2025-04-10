@@ -41,7 +41,7 @@ const AboutPage = () => {
           <section className="mb-10">
             <h2 className="text-2xl font-bold mb-4">Our Story</h2>
             <p className="text-gray-700 mb-4">
-              Genzy was founded with a vision to revolutionize the fashion industry by providing a platform 
+              Haven was founded with a vision to revolutionize the fashion industry by providing a platform 
               where quality meets affordability. We believe in creating a seamless shopping experience 
               that connects customers with authentic brands and unique styles.
             </p>

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSellerAuth } from '../../context/SellerAuthContext';
 
-// Sample credentials (in real app, these would be in the database)
-const SAMPLE_CREDS = {
-  email: 'seller@genzy.com',
-  password: 'Seller@123'
+// Sample credentials for demo/testing purposes
+// Note: In a real application, these credentials would be in the database
+// You can use these for testing: seller@haven.com / sellerpassword
+const sellerCredentials = {
+  email: 'seller@haven.com',
+  password: 'sellerpassword',
 };
 
 const SellerLogin = () => {

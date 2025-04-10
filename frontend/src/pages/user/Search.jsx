@@ -312,255 +312,268 @@ const Search = () => {
   const areFiltersApplied = gender !== 'all' || selectedCategory !== 'all' || selectedStyle !== 'all' || selectedBrand !== 'all';
 
   return (
-    <div className="pb-16 pt-4 relative">
-      {/* Search Bar with Filter Button */}
-      <div className="px-4 mb-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search products, brands, styles..."
-            value={searchQuery}
-            onChange={handleSearchInput}
-            className="w-full pl-10 pr-14 py-2 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500"
+    <div className="pb-16 relative">
+      {/* Brand Header with Dark Background - Reduced height */}
+      <div className="bg-[#292728] px-4 pt-2 pb-5">
+        {/* SVG Logo positioned more to the left and lower */}
+        <div className="flex justify-center pr-1 pt-1">
+          <img 
+            src="/photologo.svg" 
+            alt="Brand Logo" 
+            className="h-14 object-contain drop-shadow-lg"
           />
-          <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <button 
-            onClick={() => setIsFilterOpen(true)}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-gray-400 hover:text-gray-700"
-          >
-            <HiAdjustments className="w-5 h-5" />
-          </button>
         </div>
       </div>
+      
+      {/* Premium Search Bar - positioned higher with half on colored background */}
+      <div className="relative px-4 -mt-5">
+        <input
+          type="text"
+          placeholder="Search products, brands, styles..."
+          value={searchQuery}
+          onChange={handleSearchInput}
+          className="w-full pl-10 pr-14 py-3 rounded-xl bg-white border border-gray-200 text-gray-800 placeholder-gray-500 focus:outline-none focus:border-gray-400 shadow-lg"
+        />
+        <HiSearch className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+        <button 
+          onClick={() => setIsFilterOpen(true)}
+          className="absolute right-7 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded-full bg-gray-100"
+        >
+          <HiAdjustments className="w-4 h-4" />
+        </button>
+      </div>
 
-      {/* Active Filters Indicators */}
-      {areFiltersApplied && (
-        <div className="px-4 mb-4">
-          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
-            <span className="text-xs text-gray-500">Filters:</span>
-            
-            {gender !== 'all' && (
-              <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                <span>{gender === 'male' ? 'Gente' : 'Lade'}</span>
-                <button onClick={() => setGender('all')} className="hover:text-blue-600">
-                  <HiX className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-            
-            {selectedCategory !== 'all' && (
-              <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                <span>{selectedCategory}</span>
-                <button onClick={() => setSelectedCategory('all')} className="hover:text-green-600">
-                  <HiX className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-            
-            {selectedStyle !== 'all' && (
-              <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                <span>{selectedStyle}</span>
-                <button onClick={() => setSelectedStyle('all')} className="hover:text-purple-600">
-                  <HiX className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-            
-            {selectedBrand !== 'all' && (
-              <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                <span>{selectedBrand}</span>
-                <button onClick={() => setSelectedBrand('all')} className="hover:text-orange-600">
-                  <HiX className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-            
-            <button 
-              onClick={resetFilters}
-              className="text-xs text-gray-500 hover:text-red-500 ml-1"
-            >
-              Clear all
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Filter Popup Modal */}
-      <AnimatePresence>
-        {isFilterOpen && (
-          <motion.div 
-            className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsFilterOpen(false)}
-          >
-            <motion.div 
-              className="bg-white rounded-t-2xl w-full max-w-[480px] max-h-[80vh] overflow-y-auto"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sticky top-0 bg-white z-10 p-4 border-b">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold">Filters</h3>
-                  <button 
-                    onClick={() => setIsFilterOpen(false)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500"
-                  >
-                    <HiX className="w-5 h-5" />
+      {/* Content area with spacing from dark header */}
+      <div className="pt-6">
+        {/* Active Filters Indicators */}
+        {areFiltersApplied && (
+          <div className="px-4 mb-4">
+            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
+              <span className="text-xs text-gray-500">Filters:</span>
+              
+              {gender !== 'all' && (
+                <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <span>{gender === 'male' ? 'Gente' : 'Lade'}</span>
+                  <button onClick={() => setGender('all')} className="hover:text-blue-600">
+                    <HiX className="w-3 h-3" />
                   </button>
                 </div>
-              </div>
+              )}
               
-              {/* Filter Content */}
-              <div className="p-4 space-y-6">
-                {/* Gender Filter - moved from main page to here */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Gender</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setGender('all')}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        gender === 'all'
-                          ? 'bg-blue-100 text-blue-800 font-medium'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      All Genders
-                    </button>
-                    <button
-                      onClick={() => setGender('male')}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        gender === 'male'
-                          ? 'bg-blue-100 text-blue-800 font-medium'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      Gente
-                    </button>
-                    <button
-                      onClick={() => setGender('female')}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        gender === 'female'
-                          ? 'bg-blue-100 text-blue-800 font-medium'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      Lade
-                    </button>
-                  </div>
+              {selectedCategory !== 'all' && (
+                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <span>{selectedCategory}</span>
+                  <button onClick={() => setSelectedCategory('all')} className="hover:text-green-600">
+                    <HiX className="w-3 h-3" />
+                  </button>
                 </div>
-                
-                {/* Categories Section */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Categories</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {filterCategories.map(category => (
-                      <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                          selectedCategory === category
-                            ? 'bg-green-100 text-green-800 font-medium'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {category === 'all' ? 'All Categories' : category}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Styles Section */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Styles & Occasions</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {filterStyles.map(style => (
-                      <button
-                        key={style}
-                        onClick={() => setSelectedStyle(style)}
-                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                          selectedStyle === style
-                            ? 'bg-purple-100 text-purple-800 font-medium'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {style === 'all' ? 'All Styles' : style}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Brands Section */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Brands</h4>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                    {brandNames.map(brand => (
-                      <button
-                        key={brand}
-                        onClick={() => setSelectedBrand(brand)}
-                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                          selectedBrand === brand
-                            ? 'bg-orange-100 text-orange-800 font-medium'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {brand === 'all' ? 'All Brands' : brand}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              )}
               
-              {/* Action Buttons */}
-              <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3">
-                <button
-                  onClick={resetFilters}
-                  className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-600 font-medium"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={() => {
-                    applyFilters();
-                    setIsFilterOpen(false);
-                  }}
-                  className="flex-1 py-2 rounded-lg bg-black text-white font-medium"
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Search Results */}
-      <div className="px-4">
-        {searchQuery && (
-          <div className="mb-4 text-sm text-gray-600">
-            <p>Showing results for: <span className="font-medium">{searchQuery}</span></p>
+              {selectedStyle !== 'all' && (
+                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <span>{selectedStyle}</span>
+                  <button onClick={() => setSelectedStyle('all')} className="hover:text-purple-600">
+                    <HiX className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              
+              {selectedBrand !== 'all' && (
+                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <span>{selectedBrand}</span>
+                  <button onClick={() => setSelectedBrand('all')} className="hover:text-orange-600">
+                    <HiX className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              
+              <button 
+                onClick={resetFilters}
+                className="text-xs text-gray-500 hover:text-red-500 ml-1"
+              >
+                Clear all
+              </button>
+            </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-4">
-          {loading ? (
-            [...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 aspect-square rounded-lg"></div>
-                <div className="mt-2 h-4 bg-gray-200 rounded"></div>
-                <div className="mt-1 h-4 w-20 bg-gray-200 rounded"></div>
-              </div>
-            ))
-          ) : products.length === 0 ? (
-            <p className="col-span-2 text-center text-gray-500 py-8">No products found</p>
-          ) : (
-            products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
+
+        {/* Filter Popup Modal */}
+        <AnimatePresence>
+          {isFilterOpen && (
+            <motion.div 
+              className="fixed inset-0 bg-[#292728]/50 z-50 flex items-end justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFilterOpen(false)}
+            >
+              <motion.div 
+                className="bg-white rounded-t-2xl w-full max-w-[480px] max-h-[80vh] overflow-y-auto"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sticky top-0 bg-white z-10 p-4 border-b">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">Filters</h3>
+                    <button 
+                      onClick={() => setIsFilterOpen(false)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500"
+                    >
+                      <HiX className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Filter Content */}
+                <div className="p-4 space-y-6">
+                  {/* Gender Filter - moved from main page to here */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Gender</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setGender('all')}
+                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                          gender === 'all'
+                            ? 'bg-blue-100 text-blue-800 font-medium'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        All Genders
+                      </button>
+                      <button
+                        onClick={() => setGender('male')}
+                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                          gender === 'male'
+                            ? 'bg-blue-100 text-blue-800 font-medium'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Gente
+                      </button>
+                      <button
+                        onClick={() => setGender('female')}
+                        className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                          gender === 'female'
+                            ? 'bg-blue-100 text-blue-800 font-medium'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Lade
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Categories Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Categories</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {filterCategories.map(category => (
+                        <button
+                          key={category}
+                          onClick={() => setSelectedCategory(category)}
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                            selectedCategory === category
+                              ? 'bg-green-100 text-green-800 font-medium'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {category === 'all' ? 'All Categories' : category}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Styles Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Styles & Occasions</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {filterStyles.map(style => (
+                        <button
+                          key={style}
+                          onClick={() => setSelectedStyle(style)}
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                            selectedStyle === style
+                              ? 'bg-purple-100 text-purple-800 font-medium'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {style === 'all' ? 'All Styles' : style}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Brands Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Brands</h4>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {brandNames.map(brand => (
+                        <button
+                          key={brand}
+                          onClick={() => setSelectedBrand(brand)}
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                            selectedBrand === brand
+                              ? 'bg-orange-100 text-orange-800 font-medium'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {brand === 'all' ? 'All Brands' : brand}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3">
+                  <button
+                    onClick={resetFilters}
+                    className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-600 font-medium"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      applyFilters();
+                      setIsFilterOpen(false);
+                    }}
+                    className="flex-1 py-2 rounded-lg bg-[#292728] text-white font-medium"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
           )}
+        </AnimatePresence>
+
+        {/* Search Results */}
+        <div className="px-4">
+          {searchQuery && (
+            <div className="mb-4 text-sm text-gray-600">
+              <p>Showing results for: <span className="font-medium">{searchQuery}</span></p>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 aspect-square rounded-lg"></div>
+                  <div className="mt-2 h-4 bg-gray-200 rounded"></div>
+                  <div className="mt-1 h-4 w-20 bg-gray-200 rounded"></div>
+                </div>
+              ))
+            ) : products.length === 0 ? (
+              <p className="col-span-2 text-center text-gray-500 py-8">No products found</p>
+            ) : (
+              products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
