@@ -43,7 +43,11 @@ const AddProduct = () => {
     size_chart: '',
   });
 
+  // Separate state for has_multiple_colors since it's not in the database
+  const [hasMultipleColors, setHasMultipleColors] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
+  const [nameWordCount, setNameWordCount] = useState(0);
+  const [descriptionWordCount, setDescriptionWordCount] = useState(0);
 
   // Fetch size chart images for this seller
   useEffect(() => {
@@ -79,17 +83,64 @@ const AddProduct = () => {
     const { name, value, type, checked } = e.target;
 
     if (type === 'checkbox') {
-      const array = formData[name];
-      if (checked) {
-        setFormData({ ...formData, [name]: [...array, value] });
+      if (name === 'has_multiple_colors') {
+        // Handle has_multiple_colors as client-side state
+        setHasMultipleColors(checked);
+        // If unchecking, clear the colors array in formData
+        if (!checked) {
+          setFormData(prev => ({ ...prev, colors: [] }));
+        }
       } else {
-        setFormData({
-          ...formData,
-          [name]: array.filter((item) => item !== value),
-        });
+        const array = formData[name];
+        if (checked) {
+          setFormData({ ...formData, [name]: [...array, value] });
+        } else {
+          setFormData({
+            ...formData,
+            [name]: array.filter((item) => item !== value),
+          });
+        }
+      }
+    } else if (name === 'name') {
+      // Count words in name and limit to 7 words
+      const words = value.trim().split(/\s+/);
+      const wordCount = words.length;
+      setNameWordCount(wordCount);
+      
+      if (wordCount <= 7) {
+        setFormData({ ...formData, [name]: value });
+      }
+    } else if (name === 'description') {
+      // Count words in description and limit to 99 words
+      const words = value.trim().split(/\s+/);
+      const wordCount = words.length;
+      setDescriptionWordCount(wordCount);
+      
+      if (wordCount <= 99) {
+        setFormData({ ...formData, [name]: value });
+      }
+    } else if (name === 'selling_price') {
+      // Ensure selling price is not greater than MRP
+      const sellingPrice = parseFloat(value);
+      const mrp = parseFloat(formData.mrp);
+      
+      if (!mrp || sellingPrice <= mrp) {
+        setFormData({ ...formData, [name]: value });
+      } else {
+        setError('Selling price cannot be greater than MRP');
       }
     } else {
       setFormData({ ...formData, [name]: value });
+      
+      // If MRP is updated, check if selling price needs to be adjusted
+      if (name === 'mrp' && formData.selling_price) {
+        const newMrp = parseFloat(value);
+        const currentSellingPrice = parseFloat(formData.selling_price);
+        
+        if (currentSellingPrice > newMrp) {
+          setFormData(prev => ({ ...prev, selling_price: value }));
+        }
+      }
     }
   };
 
@@ -189,6 +240,26 @@ const AddProduct = () => {
       return;
     }
 
+    // Validate the selling price against MRP
+    if (parseFloat(formData.selling_price) > parseFloat(formData.mrp)) {
+      setError('Selling price cannot be greater than MRP');
+      return;
+    }
+
+    // Validate word counts
+    const nameWords = formData.name.trim().split(/\s+/).length;
+    const descriptionWords = formData.description.trim().split(/\s+/).length;
+    
+    if (nameWords > 7) {
+      setError('Product name cannot exceed 7 words');
+      return;
+    }
+    
+    if (descriptionWords > 99) {
+      setError('Product description cannot exceed 99 words');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
@@ -201,13 +272,16 @@ const AddProduct = () => {
         return;
       }
 
-      // Ensure seller_id is stored as a string to match auth.uid() in RLS policy
+      // Create a copy of formData without the has_multiple_colors field
       const productData = {
         ...formData,
         seller_id: String(seller.id),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      // Don't include has_multiple_colors in the data sent to the server
+      delete productData.has_multiple_colors;
 
       console.log('Adding product with data:', {
         ...productData,
@@ -253,7 +327,10 @@ const AddProduct = () => {
       gender: 'unisex',
       size_chart: '',
     });
+    setHasMultipleColors(false);
     setPreviewImages([]);
+    setNameWordCount(0);
+    setDescriptionWordCount(0);
   };
 
   return (
@@ -293,6 +370,12 @@ const AddProduct = () => {
                     required
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">Enter a clear, descriptive name</span>
+                    <span className={`text-xs ${nameWordCount > 7 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {nameWordCount}/7 words
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -307,6 +390,12 @@ const AddProduct = () => {
                     rows={4}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">Describe your product features, materials, etc.</span>
+                    <span className={`text-xs ${descriptionWordCount >99 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {descriptionWordCount}/99 words
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -390,23 +479,45 @@ const AddProduct = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Colors
+                    Product Colors
                   </label>
-                  <div className="flex flex-wrap gap-4">
-                    {COLORS.map((color) => (
-                      <label key={color} className="inline-flex items-center">
-                        <input
-                          type="checkbox"
-                          name="colors"
-                          value={color}
-                          checked={formData.colors.includes(color)}
-                          onChange={handleChange}
-                          className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <span className="ml-2">{color}</span>
-                      </label>
-                    ))}
+                  <div className="mb-2 flex items-center">
+                    <input
+                      type="checkbox"
+                      id="has_multiple_colors"
+                      name="has_multiple_colors"
+                      checked={hasMultipleColors}
+                      onChange={handleChange}
+                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="has_multiple_colors" className="ml-2 text-sm text-gray-700">
+                      This product is available in multiple colors
+                    </label>
                   </div>
+                  
+                  {hasMultipleColors && (
+                    <div className="flex flex-wrap gap-4">
+                      {COLORS.map((color) => (
+                        <label key={color} className="inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            name="colors"
+                            value={color}
+                            checked={formData.colors.includes(color)}
+                            onChange={handleChange}
+                            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          />
+                          <span className="ml-2 flex items-center">
+                            <span 
+                              className="inline-block w-4 h-4 rounded-full mr-1"
+                              style={{ backgroundColor: color.toLowerCase() }}
+                            />
+                            {color}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

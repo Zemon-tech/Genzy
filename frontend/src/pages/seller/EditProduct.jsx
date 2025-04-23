@@ -27,6 +27,8 @@ const EditProduct = () => {
     image3: null
   });
   const [loadingSizeCharts, setLoadingSizeCharts] = useState(true);
+  const [nameWordCount, setNameWordCount] = useState(0);
+  const [descriptionWordCount, setDescriptionWordCount] = useState(0);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -36,6 +38,7 @@ const EditProduct = () => {
     category: '',
     sizes: [],
     colors: [],
+    has_multiple_colors: false,
     stock_quantity: '',
     style_type: '',
     shipping_charges: '',
@@ -44,6 +47,9 @@ const EditProduct = () => {
     images: [],
     size_chart: '',
   });
+
+  // Add a separate state for hasMultipleColors
+  const [hasMultipleColors, setHasMultipleColors] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -56,8 +62,23 @@ const EditProduct = () => {
 
         if (error) throw error;
         if (data) {
+          // Calculate if the product has multiple colors defined
+          const hasMultipleColors = data.colors && data.colors.length > 0;
+          
+          // Store hasMultipleColors in client-side state but don't add it to formData
           setFormData(data);
+          setHasMultipleColors(hasMultipleColors);
+          
           setPreviewImages(data.images);
+          
+          // Initialize word counts
+          if (data.name) {
+            setNameWordCount(data.name.trim().split(/\s+/).length);
+          }
+          
+          if (data.description) {
+            setDescriptionWordCount(data.description.trim().split(/\s+/).length);
+          }
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -104,17 +125,64 @@ const EditProduct = () => {
     const { name, value, type, checked } = e.target;
 
     if (type === 'checkbox') {
-      const array = formData[name];
-      if (checked) {
-        setFormData({ ...formData, [name]: [...array, value] });
+      if (name === 'has_multiple_colors') {
+        // Handle has_multiple_colors separately
+        setHasMultipleColors(checked);
+        // If unchecking, clear colors array
+        if (!checked) {
+          setFormData(prev => ({ ...prev, colors: [] }));
+        }
       } else {
-        setFormData({
-          ...formData,
-          [name]: array.filter((item) => item !== value),
-        });
+        const array = formData[name];
+        if (checked) {
+          setFormData({ ...formData, [name]: [...array, value] });
+        } else {
+          setFormData({
+            ...formData,
+            [name]: array.filter((item) => item !== value),
+          });
+        }
+      }
+    } else if (name === 'name') {
+      // Count words in name and limit to 7 words
+      const words = value.trim().split(/\s+/);
+      const wordCount = words.length;
+      setNameWordCount(wordCount);
+      
+      if (wordCount <= 7) {
+        setFormData({ ...formData, [name]: value });
+      }
+    } else if (name === 'description') {
+      // Count words in description and limit to 99 words
+      const words = value.trim().split(/\s+/);
+      const wordCount = words.length;
+      setDescriptionWordCount(wordCount);
+      
+      if (wordCount <= 99) {
+        setFormData({ ...formData, [name]: value });
+      }
+    } else if (name === 'selling_price') {
+      // Ensure selling price is not greater than MRP
+      const sellingPrice = parseFloat(value);
+      const mrp = parseFloat(formData.mrp);
+      
+      if (!mrp || sellingPrice <= mrp) {
+        setFormData({ ...formData, [name]: value });
+      } else {
+        setError('Selling price cannot be greater than MRP');
       }
     } else {
       setFormData({ ...formData, [name]: value });
+      
+      // If MRP is updated, check if selling price needs to be adjusted
+      if (name === 'mrp' && formData.selling_price) {
+        const newMrp = parseFloat(value);
+        const currentSellingPrice = parseFloat(formData.selling_price);
+        
+        if (currentSellingPrice > newMrp) {
+          setFormData(prev => ({ ...prev, selling_price: value }));
+        }
+      }
     }
   };
 
@@ -208,61 +276,62 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.images.length === 0) {
+      setError('Please upload at least one image');
+      return;
+    }
+
+    // Validate the selling price against MRP
+    if (parseFloat(formData.selling_price) > parseFloat(formData.mrp)) {
+      setError('Selling price cannot be greater than MRP');
+      return;
+    }
+
+    // Validate word counts
+    const nameWords = formData.name.trim().split(/\s+/).length;
+    const descriptionWords = formData.description.trim().split(/\s+/).length;
+    
+    if (nameWords > 7) {
+      setError('Product name cannot exceed 7 words');
+      return;
+    }
+    
+    if (descriptionWords > 99) {
+      setError('Product description cannot exceed 99 words');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
-      
-      console.log('Updating product with ID:', productId);
 
-      if (!seller || !seller.id) {
-        setError('You must be logged in as a seller to update products');
-        setLoading(false);
-        return;
-      }
-
-      // Make sure seller_id is set correctly and as a string
-      const updatedData = {
+      // Create a copy of formData without the has_multiple_colors field
+      const dataToUpdate = {
         ...formData,
-        seller_id: String(seller.id), // Ensure seller_id is a string
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-
-      console.log('Updating product with data:', {
-        id: productId,
-        sellerId: updatedData.seller_id,
-        name: updatedData.name
-      });
-
-      // Don't filter by seller_id in the query, let RLS handle that
-      const { data, error: updateError } = await supabase
-        .from('products')
-        .update(updatedData)
-        .eq('id', productId)
-        .select();
-
-      if (updateError) {
-        console.error('Error updating product:', updateError);
-        throw updateError;
-      }
-
-      console.log('Update response:', data);
       
-      if (!data || data.length === 0) {
-        console.error('Product not updated, possibly due to RLS or it doesn\'t exist');
-        throw new Error('Failed to update product. You may not have permission to edit this product.');
-      }
+      // Don't include has_multiple_colors in the data sent to the server
+      delete dataToUpdate.has_multiple_colors;
+      
+      // First, update the product
+      const { error: updateError } = await supabase
+        .from('products')
+        .update(dataToUpdate)
+        .eq('id', productId);
 
+      if (updateError) throw updateError;
+
+      // Then delete any images marked for deletion
       if (imagesToDelete.length > 0) {
-        console.log('Deleting old images:', imagesToDelete);
         await deleteImagesFromStorage(imagesToDelete);
       }
 
       setSuccess('Product updated successfully!');
       setImagesToDelete([]);
-      setTimeout(() => navigate('/seller/products'), 1500);
-    } catch (err) {
-      console.error('Error in handleSubmit:', err);
-      setError('Error updating product: ' + err.message);
+    } catch (error) {
+      console.error('Error updating product:', error);
+      setError('Error updating product: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -287,134 +356,173 @@ const EditProduct = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="bg-white p-6 rounded-lg shadow space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
+            {/* Basic Details */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Basic Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Product Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">Enter a clear, descriptive name</span>
+                    <span className={`text-xs ${nameWordCount > 7 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {nameWordCount}/7 words
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                  <option value="">Select Category</option>
-                  {CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    required
+                    rows={4}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">Describe your product features, materials, etc.</span>
+                    <span className={`text-xs ${descriptionWordCount > 99 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {descriptionWordCount}/99 words
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  MRP
-                </label>
-                <input
-                  type="number"
-                  name="mrp"
-                  value={formData.mrp}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      MRP
+                    </label>
+                    <input
+                      type="number"
+                      name="mrp"
+                      value={formData.mrp}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Selling Price
-                </label>
-                <input
-                  type="number"
-                  name="selling_price"
-                  value={formData.selling_price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  required
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Selling Price
+                    </label>
+                    <input
+                      type="number"
+                      name="selling_price"
+                      value={formData.selling_price}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs text-gray-500 mt-1">Must be less than or equal to MRP</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Variants */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Variants</h3>
-              
-              {/* Sizes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available Sizes
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {SIZES.map((size) => (
-                    <label key={size} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="sizes"
-                        value={size}
-                        checked={formData.sizes.includes(size)}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="ml-2">{size}</span>
-                    </label>
-                  ))}
+            {/* Product Details */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Product Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Category
+                  </label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  >
+                    <option value="">Select Category</option>
+                    {CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
 
-              {/* Colors */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available Colors
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {COLORS.map((color) => (
-                    <label key={color} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="colors"
-                        value={color}
-                        checked={formData.colors.includes(color)}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="ml-2">{color}</span>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Available Sizes
+                  </label>
+                  <div className="flex flex-wrap gap-4">
+                    {SIZES.map((size) => (
+                      <label key={size} className="inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          name="sizes"
+                          value={size}
+                          checked={formData.sizes.includes(size)}
+                          onChange={handleChange}
+                          className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <span className="ml-2">{size}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Colors
+                  </label>
+                  <div className="mb-2 flex items-center">
+                    <input
+                      type="checkbox"
+                      id="has_multiple_colors"
+                      name="has_multiple_colors"
+                      checked={hasMultipleColors}
+                      onChange={handleChange}
+                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="has_multiple_colors" className="ml-2 text-sm text-gray-700">
+                      This product is available in multiple colors
                     </label>
-                  ))}
+                  </div>
+                  
+                  {hasMultipleColors && (
+                    <div className="flex flex-wrap gap-4">
+                      {COLORS.map((color) => (
+                        <label key={color} className="inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            name="colors"
+                            value={color}
+                            checked={formData.colors.includes(color)}
+                            onChange={handleChange}
+                            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          />
+                          <span className="ml-2 flex items-center">
+                            <span 
+                              className="inline-block w-4 h-4 rounded-full mr-1"
+                              style={{ backgroundColor: color.toLowerCase() }}
+                            />
+                            {color}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -646,8 +754,8 @@ const EditProduct = () => {
                 {loading ? 'Updating Product...' : 'Update Product'}
               </button>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

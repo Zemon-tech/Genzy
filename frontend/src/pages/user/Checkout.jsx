@@ -704,8 +704,11 @@ const Checkout = () => {
                       <span>•</span>
                       <span>Qty: {item.quantity}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Size: {item.selectedSize} • Color: {item.selectedColor}
+                    <div className="text-sm text-gray-500 truncate mb-1">
+                      Size: {item.selectedSize}
+                      {item.selectedColor && (
+                        <> • Color: {item.selectedColor}</>
+                      )}
                     </div>
                   </div>
                 </div>

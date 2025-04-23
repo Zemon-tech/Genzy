@@ -145,13 +145,24 @@ const Cart = () => {
             </span>
           )}
         </div>
-        <div className="mt-1 text-sm text-gray-500 space-x-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-800">
-            Size: {item.selectedSize}
-          </span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-800">
-            Color: {item.selectedColor}
-          </span>
+        <div className="mt-2 text-sm text-gray-500 space-y-1">
+          {/* Size */}
+          <div className="flex items-center">
+            <span>Size:</span>
+            <span className="ml-2">{item.selectedSize}</span>
+          </div>
+          
+          {/* Color */}
+          {item.selectedColor ? (
+            <div className="flex items-center">
+              <span>Color:</span>
+              <span
+                className="ml-2 h-4 w-4 rounded-full inline-block"
+                style={{ backgroundColor: item.selectedColor.toLowerCase() }}
+              ></span>
+              <span className="ml-1">{item.selectedColor}</span>
+            </div>
+          ) : null}
         </div>
         {item.delivery_time && (
           <div className="mt-1 text-xs text-gray-600 flex items-center gap-1">

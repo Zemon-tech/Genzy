@@ -118,6 +118,20 @@ const ProductPage = () => {
     }
   };
 
+  // When product data is loaded, initialize the first size if available
+  useEffect(() => {
+    if (product && product.sizes && product.sizes.length > 0) {
+      setSelectedSize(product.sizes[0]);
+    }
+    
+    // Initialize the first color only if product has colors
+    if (product && product.colors && product.colors.length > 0) {
+      setSelectedColor(product.colors[0]);
+    } else {
+      setSelectedColor(null); // Reset color selection if no colors
+    }
+  }, [product]);
+
   // Helper to determine the actual direction based on current and target index
   const determineDirection = (currentIdx, targetIdx, totalLength) => {
     if (currentIdx === targetIdx) return 1; // Default to forward on same index

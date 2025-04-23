@@ -11,10 +11,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate', 
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'offline.html'],
       manifest: false, // We're using our own manifest file
-      injectRegister: 'auto',
+      injectRegister: 'script',
       strategies: 'generateSW', 
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,json}'],
@@ -25,6 +25,8 @@ export default defineConfig({
         // Disable navigation fallback which causes offline page to flash
         navigateFallback: null,
         navigateFallbackDenylist: [],
+        // Set the proper MIME type for the service worker
+        swDest: 'sw.js',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

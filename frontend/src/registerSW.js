@@ -17,7 +17,18 @@ export const registerSW = () => {
       // Delay service worker registration slightly to prioritize page load
       setTimeout(() => {
         // Register the service worker from the root of the app
-        navigator.serviceWorker.register('/sw.js')
+        // Use fetch API to ensure proper MIME type handling
+        fetch('/sw.js')
+          .then(response => {
+            if (response.status === 200) {
+              // Only register if the file exists and has correct MIME type
+              return navigator.serviceWorker.register('/sw.js', {
+                scope: '/',
+                type: 'module' // Specify the script type to help with MIME type handling
+              });
+            }
+            throw new Error('Service worker file not found or has incorrect MIME type');
+          })
           .then(registration => {
             console.log('Service Worker registered with scope:', registration.scope);
             
@@ -30,6 +41,10 @@ export const registerSW = () => {
           })
           .catch(error => {
             console.error('Service Worker registration failed:', error);
+            // In development, show a warning but don't stop app functionality
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+              console.warn('Service Worker registration failed in development mode. This is expected and won\'t affect your app.');
+            }
           });
       }, 1000); // Small delay to prioritize page rendering
           

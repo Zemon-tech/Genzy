@@ -3,6 +3,7 @@ import { calculateDiscount } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import toast from 'react-hot-toast';
+import PropTypes from 'prop-types';
 
 const ProductDetails = ({
   product,
@@ -14,7 +15,7 @@ const ProductDetails = ({
   setQuantity,
   openSizeChart
 }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { addToCart, addToWishlist, removeFromWishlist, wishlist, loading } = useCart();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
@@ -44,8 +45,24 @@ const ProductDetails = ({
       return;
     }
     
-    if (!selectedSize || !selectedColor) {
-      toast.error('Please select size and color', {
+    // Check if size is selected
+    if (!selectedSize) {
+      toast.error('Please select a size', {
+        position: 'top-center',
+        duration: 2000,
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '10px',
+          padding: '16px'
+        }
+      });
+      return;
+    }
+    
+    // Check if color is selected (only if product has colors)
+    if (product.colors && product.colors.length > 0 && !selectedColor) {
+      toast.error('Please select a color', {
         position: 'top-center',
         duration: 2000,
         style: {
@@ -61,7 +78,7 @@ const ProductDetails = ({
     addToCart({
       ...product,
       selectedSize,
-      selectedColor,
+      selectedColor: product.colors && product.colors.length > 0 ? selectedColor : null,
       quantity
     });
     
@@ -118,7 +135,7 @@ const ProductDetails = ({
           }
         });
       }
-    } catch (error) {
+    } catch (err) {
       toast.error('Error updating wishlist', {
         position: 'top-center',
         duration: 2000,
@@ -129,6 +146,7 @@ const ProductDetails = ({
           padding: '16px'
         }
       });
+      console.error('Wishlist update error:', err);
     }
   };
 
@@ -183,28 +201,30 @@ const ProductDetails = ({
         ))}
       </div>
 
-      {/* Colors */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Select Color</h3>
-        <div className="flex gap-3">
-          {product.colors.map((color) => (
-            <button
-              key={color}
-              onClick={() => setSelectedColor(color)}
-              className={`w-10 h-10 rounded-full border-2 transition-all
-                ${selectedColor === color 
-                  ? 'border-customBlack scale-110' 
-                  : 'border-transparent hover:scale-110'
-                }`}
-            >
-              <span
-                className="block w-full h-full rounded-full"
-                style={{ backgroundColor: color.toLowerCase() }}
-              />
-            </button>
-          ))}
+      {/* Colors - Only show if product has colors */}
+      {product.colors && product.colors.length > 0 ? (
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 mb-3">Select Color</h3>
+          <div className="flex gap-3">
+            {product.colors.map((color) => (
+              <button
+                key={color}
+                onClick={() => setSelectedColor(color)}
+                className={`w-10 h-10 rounded-full border-2 transition-all
+                  ${selectedColor === color 
+                    ? 'border-customBlack scale-110' 
+                    : 'border-transparent hover:scale-110'
+                  }`}
+              >
+                <span
+                  className="block w-full h-full rounded-full"
+                  style={{ backgroundColor: color.toLowerCase() }}
+                />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Quantity */}
       <div>
@@ -249,6 +269,17 @@ const ProductDetails = ({
       </div>
     </div>
   );
+};
+
+ProductDetails.propTypes = {
+  product: PropTypes.object.isRequired,
+  selectedSize: PropTypes.string.isRequired,
+  setSelectedSize: PropTypes.func.isRequired,
+  selectedColor: PropTypes.string,
+  setSelectedColor: PropTypes.func,
+  quantity: PropTypes.number.isRequired,
+  setQuantity: PropTypes.func.isRequired,
+  openSizeChart: PropTypes.func.isRequired
 };
 
 export default ProductDetails; 
