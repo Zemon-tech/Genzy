@@ -320,7 +320,7 @@ const Search = () => {
           <img 
             src="/photologo.svg" 
             alt="Brand Logo" 
-            className="h-14 object-contain drop-shadow-lg"
+            className="h-12 object-contain drop-shadow-lg"
           />
         </div>
       </div>

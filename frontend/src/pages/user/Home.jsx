@@ -160,7 +160,7 @@ const Home = () => {
                 <img 
                   src="/photologo.svg" 
                   alt="Brand Logo" 
-                  className="h-16 object-contain z-20 drop-shadow-lg"
+                  className="h-12 object-contain z-20 drop-shadow-lg"
                 />
               </div>
             </div>
