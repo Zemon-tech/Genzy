@@ -131,7 +131,7 @@ const OrderSuccess = () => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white min-h-screen">
+      <div className="max-w-[480px] mx-auto bg-white min-h-screen">
         {/* Header */}
         <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
           <div className="flex items-center gap-4">

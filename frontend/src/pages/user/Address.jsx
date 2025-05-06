@@ -246,147 +246,155 @@ const Address = () => {
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-6">
-        <button onClick={() => navigate(-1)} className="p-2">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-xl font-semibold">Manage Addresses</h1>
-      </div>
-
-      {/* Add/Edit Address Button */}
-      {!showForm && addresses.length === 0 && (
-        <Button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            form.reset(); // Reset form when adding new address
-          }}
-          className="w-full mb-4 flex items-center gap-2 justify-center"
-          variant="outline"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Address
-        </Button>
-      )}
-
-      {/* Address Form */}
-      {showForm && (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-6 p-4 border rounded-lg">
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="house/flat no, building name, street, area" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="landmark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Landmark</FormLabel>
-                  <FormControl>
-                    <Input placeholder="nearby landmark (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="enter city name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State</FormLabel>
-                  <FormControl>
-                    <Input placeholder="enter state name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="pincode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pincode</FormLabel>
-                  <FormControl>
-                    <Input placeholder="enter pincode" maxLength={6} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
-                {isEditing ? 'Update Address' : 'Save Address'}
-              </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setShowForm(false);
-                  setIsEditing(false);
-                  form.reset();
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Form>
-      )}
-
-      {/* Existing Addresses */}
-      <div className="space-y-4">
-        {addresses.map((address, index) => (
-          <div key={index} className="p-4 border rounded-lg">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-5 h-5 mt-1 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm">{address}</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(address)}
-                className="shrink-0"
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[480px] mx-auto bg-white min-h-screen">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white border-b">
+          <div className="p-4 flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-medium">Manage Addresses</h1>
           </div>
-        ))}
+        </div>
+
+        {/* Add/Edit Address Button */}
+        {!showForm && addresses.length === 0 && (
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              form.reset(); // Reset form when adding new address
+            }}
+            className="w-full mb-4 flex items-center gap-2 justify-center"
+            variant="outline"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Address
+          </Button>
+        )}
+
+        {/* Address Form */}
+        {showForm && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-6 p-4 border rounded-lg">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="house/flat no, building name, street, area" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="landmark"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Landmark</FormLabel>
+                    <FormControl>
+                      <Input placeholder="nearby landmark (optional)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input placeholder="enter city name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <FormControl>
+                      <Input placeholder="enter state name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pincode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pincode</FormLabel>
+                    <FormControl>
+                      <Input placeholder="enter pincode" maxLength={6} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1">
+                  {isEditing ? 'Update Address' : 'Save Address'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowForm(false);
+                    setIsEditing(false);
+                    form.reset();
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+
+        {/* Existing Addresses */}
+        <div className="space-y-4">
+          {addresses.map((address, index) => (
+            <div key={index} className="p-4 border rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-5 h-5 mt-1 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm">{address}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(address)}
+                  className="shrink-0"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

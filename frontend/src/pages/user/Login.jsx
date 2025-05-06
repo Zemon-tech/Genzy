@@ -43,101 +43,103 @@ const Login = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-center">
-          {isSignup ? 'Sign Up' : 'Login'}
-        </h2>
-        <p className="mt-2 text-center text-gray-600">
-          {isSignup ? 'Create your account' : 'Welcome back to Haven'}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[480px] mx-auto bg-white min-h-screen p-4">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-center">
+            {isSignup ? 'Sign Up' : 'Login'}
+          </h2>
+          <p className="mt-2 text-center text-gray-600">
+            {isSignup ? 'Create your account' : 'Welcome back to Haven'}
+          </p>
+        </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        {isSignup && (
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          {isSignup && (
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                Full Name
+              </label>
+              <input
+                id="full_name"
+                name="full_name"
+                type="text"
+                required={isSignup}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter your full name"
+                value={formData.full_name}
+                onChange={handleChange}
+              />
+            </div>
+          )}
+
           <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-              Full Name
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
             </label>
             <input
-              id="full_name"
-              name="full_name"
-              type="text"
-              required={isSignup}
+              id="email"
+              name="email"
+              type="email"
+              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter your full name"
-              value={formData.full_name}
+              placeholder="Enter your email"
+              value={formData.email}
               onChange={handleChange}
             />
           </div>
-        )}
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter your password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </div>
-
-        {error && (
-          <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
-            {error}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+            />
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-        >
-          {loading ? 'Processing...' : (isSignup ? 'Sign Up' : 'Login')}
-        </button>
+          {error && (
+            <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+              {error}
+            </div>
+          )}
 
-        <div className="text-center mt-4">
           <button
-            type="button"
-            onClick={() => {
-              setIsSignup(!isSignup);
-              setError('');
-              setFormData({
-                email: '',
-                password: '',
-                full_name: ''
-              });
-            }}
-            className="text-indigo-600 hover:text-indigo-500"
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {isSignup
-              ? 'Already have an account? Login'
-              : "Don't have an account? Sign Up"}
+            {loading ? 'Processing...' : (isSignup ? 'Sign Up' : 'Login')}
           </button>
-        </div>
-      </form>
+
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignup(!isSignup);
+                setError('');
+                setFormData({
+                  email: '',
+                  password: '',
+                  full_name: ''
+                });
+              }}
+              className="text-indigo-600 hover:text-indigo-500"
+            >
+              {isSignup
+                ? 'Already have an account? Login'
+                : "Don't have an account? Sign Up"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

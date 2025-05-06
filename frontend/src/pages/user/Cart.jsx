@@ -313,7 +313,7 @@ const Cart = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-[480px] mx-auto px-4 py-4">
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('cart')}

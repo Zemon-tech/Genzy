@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import BottomNav from './components/user/BottomNav';
 import Home from './pages/user/Home';
 import Search from './pages/user/Search';
@@ -13,6 +13,7 @@ import AddProduct from './pages/seller/AddProduct';
 import DashboardLayout from './components/seller/DashboardLayout';
 import { AuthProvider } from './context/AuthContext';
 import { SellerAuthProvider } from './context/SellerAuthContext';
+import { AdminAuthProvider } from './context/AdminAuthContext';
 import SellerProducts from './components/seller/SellerProducts';
 import EditProduct from './pages/seller/EditProduct';
 import SizeChart from './pages/seller/SizeChart';
@@ -36,6 +37,17 @@ import TermsPage from './pages/user/TermsPage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkInstallationEligibility } from './utils/pwaHelpers';
 import { shouldSkipOfflinePage } from './registerSW';
+
+// Admin pages
+import AdminLogin from './pages/admin/Login';
+import AdminDashboardLayout from './components/admin/AdminDashboardLayout';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import AdminSellers from './pages/admin/Sellers';
+import AdminProducts from './pages/admin/Products';
+import AdminOrders from './pages/admin/Orders';
+import AdminFeaturedCategories from './pages/admin/FeaturedCategories';
+import AdminHavendripCollection from './pages/admin/HavendripCollection';
 
 // Animation variants
 const pageVariants = {
@@ -137,13 +149,11 @@ const AnimatedRoutes = () => {
 
 // NetworkStatusProvider component to detect and manage network status at app level
 function NetworkStatusProvider({ children }) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
+  // We're only tracking online status in localStorage, not in component state
   useEffect(() => {
     // Update local network status when it changes
     const handleOnlineStatus = () => {
       console.log('Network status change detected: online');
-      setIsOnline(true);
       localStorage.setItem('offlineMode', 'false');
       // Clear service worker cache if needed for problematic pages
       if (navigator.serviceWorker.controller) {
@@ -155,7 +165,6 @@ function NetworkStatusProvider({ children }) {
     
     const handleOfflineStatus = () => {
       console.log('Network status change detected: offline');
-      setIsOnline(false);
       localStorage.setItem('offlineMode', 'true');
     };
     
@@ -168,7 +177,7 @@ function NetworkStatusProvider({ children }) {
       fetch('/', { method: 'HEAD', cache: 'no-store' })
         .then(() => {
           console.log('Connectivity verified with server');
-          setIsOnline(true);
+          localStorage.setItem('offlineMode', 'false');
         })
         .catch(err => {
           console.log('Failed to connect to server despite online status', err);
@@ -190,9 +199,10 @@ function NetworkStatusProvider({ children }) {
 }
 
 function App() {
-  // Check if the current path is a seller route
+  // Check if the current path is a seller or admin route
   const isSellerRoute = window.location.pathname.startsWith('/seller');
-  console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute);
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
+  console.log('Current path:', window.location.pathname, 'Is seller route:', isSellerRoute, 'Is admin route:', isAdminRoute);
 
   // PWA diagnostics on application start
   useEffect(() => {
@@ -232,39 +242,48 @@ function App() {
         <AuthProvider>
           <CartProvider>
             <SellerAuthProvider>
-              <Toaster />
-              <ScrollToTopOnMount />
-              {isSellerRoute ? (
-                // Seller Routes with full-width layout
-                <Routes>
-                  <Route path="/seller/login" element={<SellerLogin />} />
-                  <Route path="/seller" element={<DashboardLayout />}>
-                    <Route index element={<Navigate to="/seller/dashboard" replace />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="products" element={<SellerProducts />} />
-                    <Route path="add-product" element={<AddProduct />} />
-                    <Route path="edit-product/:productId" element={<EditProduct />} />
-                    <Route path="size-chart" element={<SizeChart />} />
-                    <Route path="orders" element={<Orders />} />
-                    <Route path="completed-orders" element={<CompletedOrders />} />
-                    {/* Add other seller routes here */}
-                  </Route>
-                </Routes>
-              ) : (
-                // User Routes with mobile layout
-                <div className="min-h-screen bg-gray-50">
-                  <div className="max-w-[480px] mx-auto bg-white min-h-screen relative">
-                    <div className="pb-16">
-                      <AnimatedRoutes />
-                    </div>
-                    <div className="fixed bottom-0 left-0 right-0 z-10">
-                      <div className="max-w-[480px] mx-auto">
-                        <BottomNav />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <AdminAuthProvider>
+                <Toaster />
+                <ScrollToTopOnMount />
+                {isAdminRoute ? (
+                  // Admin Routes with custom layout
+                  <Routes>
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin" element={<AdminDashboardLayout />}>
+                      <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="sellers" element={<AdminSellers />} />
+                      <Route path="products" element={<AdminProducts />} />
+                      <Route path="orders" element={<AdminOrders />} />
+                      <Route path="featured-categories" element={<AdminFeaturedCategories />} />
+                      <Route path="havendrip-collection" element={<AdminHavendripCollection />} />
+                    </Route>
+                  </Routes>
+                ) : isSellerRoute ? (
+                  // Seller Routes with full-width layout
+                  <Routes>
+                    <Route path="/seller/login" element={<SellerLogin />} />
+                    <Route path="/seller" element={<DashboardLayout />}>
+                      <Route index element={<Navigate to="/seller/dashboard" replace />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="products" element={<SellerProducts />} />
+                      <Route path="add-product" element={<AddProduct />} />
+                      <Route path="edit-product/:productId" element={<EditProduct />} />
+                      <Route path="size-chart" element={<SizeChart />} />
+                      <Route path="orders" element={<Orders />} />
+                      <Route path="completed-orders" element={<CompletedOrders />} />
+                      {/* Add other seller routes here */}
+                    </Route>
+                  </Routes>
+                ) : (
+                  // User Routes with bottom navigation
+                  <>
+                    <AnimatedRoutes />
+                    <BottomNav />
+                  </>
+                )}
+              </AdminAuthProvider>
             </SellerAuthProvider>
           </CartProvider>
         </AuthProvider>
