@@ -74,6 +74,7 @@ const CategoryPage = () => {
           data = data.filter(product => {
             if (!product.category) return false;
             const productCat = product.category.toLowerCase();
+            
             return productCat === exactMatch || 
                    productCat === noHyphen || 
                    productCat === withSpaces || 
@@ -98,7 +99,7 @@ const CategoryPage = () => {
   }, [categorySlug]);
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen bg-white p-4 max-w-[480px] mx-auto">
       {/* Header with back button */}
       <div className="flex items-center mb-6">
         <button
@@ -135,10 +136,10 @@ const CategoryPage = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No products found in this category</p>
+              <p className="text-gray-500">No products found in this category</p>
               <button
                 onClick={() => navigate('/')}
-                className="px-6 py-2 bg-black text-white rounded-full"
+                className="mt-4 px-4 py-2 bg-black text-white rounded-full text-sm"
               >
                 Back to Home
               </button>

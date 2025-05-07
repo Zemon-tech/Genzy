@@ -454,6 +454,8 @@ export const AdminAuthProvider = ({ children }) => {
     manageFeaturedCategories,
     manageHavendripCollection,
     getHavendripCollection
+    // Note: Seller creation from admin panel was removed due to database constraint issues
+    // Sellers should register themselves through the seller registration page
   };
 
   return (

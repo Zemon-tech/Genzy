@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import supabase from '../../config/supabase';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Skeleton } from '../../components/ui/skeleton';
-import ProfileSection from '../../components/user/ProfileSection';
 import {
   ShoppingBag,
   Heart,
@@ -12,11 +11,32 @@ import {
   LogOut,
   Phone,
   Edit,
-  Download
+  Download,
+  KeyIcon,
+  Mail,
+  User,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -27,6 +47,16 @@ const Profile = () => {
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [updatingPhone, setUpdatingPhone] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [updatingName, setUpdatingName] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallable, setIsInstallable] = useState(false);
 
@@ -127,9 +157,11 @@ const Profile = () => {
 
           setUserProfile(newProfile);
           setPhoneNumber(newProfile.phone_number || '');
+          setFullName(newProfile.full_name || '');
         } else {
           setUserProfile(profile);
           setPhoneNumber(profile.phone_number || '');
+          setFullName(profile.full_name || '');
         }
       } catch (err) {
         console.error('Error in profile operation:', err);
@@ -151,6 +183,88 @@ const Profile = () => {
     }
   };
 
+  const handleResetPassword = () => {
+    setChangingPassword(true);
+  };
+
+  const handleCancelPasswordChange = () => {
+    setChangingPassword(false);
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleUpdatePassword = async () => {
+    try {
+      // Validate input
+      if (!passwordData.currentPassword) {
+        toast.error('Please enter your current password');
+        return;
+      }
+      
+      if (!passwordData.newPassword) {
+        toast.error('Please enter a new password');
+        return;
+      }
+      
+      if (passwordData.newPassword.length < 6) {
+        toast.error('New password must be at least 6 characters');
+        return;
+      }
+      
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        toast.error('New passwords do not match');
+        return;
+      }
+      
+      setUpdatingPassword(true);
+      
+      // First verify the current password is correct by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.currentPassword
+      });
+      
+      if (signInError) {
+        toast.error('Current password is incorrect');
+        throw signInError;
+      }
+      
+      // If current password is verified, update to the new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Reset state and show success message
+      setChangingPassword(false);
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      toast.success('Password updated successfully');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return '?';
     return name
@@ -162,6 +276,43 @@ const Profile = () => {
 
   const handleEditPhone = () => {
     setEditingPhone(true);
+  };
+
+  const handleEditName = () => {
+    setEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    try {
+      if (!user) return;
+      
+      setUpdatingName(true);
+      
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ 
+          full_name: fullName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setUserProfile({
+        ...userProfile,
+        full_name: fullName
+      });
+      
+      setEditingName(false);
+      toast.success('Name updated successfully');
+      
+    } catch (error) {
+      console.error('Error updating name:', error);
+      toast.error('Failed to update name');
+    } finally {
+      setUpdatingName(false);
+    }
   };
 
   const handleSavePhone = async () => {
@@ -231,133 +382,322 @@ const Profile = () => {
       className: "text-green-600 hover:bg-green-50 border-green-100"
     });
   }
-
+  
   if (!user) return null;
 
   return (
-    <div className="h-screen bg-gray-50 overflow-hidden">
-      <div className="max-w-[480px] mx-auto bg-white h-screen flex flex-col">
-        {/* Profile Header */}
-        <div className="flex items-center p-6 border-b">
-          {loading ? (
-            <div className="flex items-center w-full">
-              <Skeleton className="h-16 w-16 rounded-full flex-shrink-0" />
-              <div className="ml-4 flex-1">
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-[480px] mx-auto min-h-screen">
+        {/* Brand Header with Dark Background */}
+        <div className="bg-[#292728] px-4 pt-3 pb-6 text-center">
+          <img 
+            src="/photologo.svg" 
+            alt="Brand Logo" 
+            className="h-14 mx-auto object-contain drop-shadow-lg"
+          />
+        </div>
+
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+          className="relative px-6 py-8 -mt-4 rounded-t-3xl bg-white shadow-lg min-h-[calc(100vh-100px)]"
+        >
+          {/* Profile Header */}
+          <motion.div
+            variants={fadeIn}
+            className="flex items-center mb-6"
+          >
+            {loading ? (
+              <div className="flex items-center w-full">
+                <Skeleton className="h-20 w-20 rounded-full flex-shrink-0" />
+                <div className="ml-4 flex-1">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              <Avatar className="h-16 w-16 flex-shrink-0">
-                <AvatarImage src={user.user_metadata?.avatar_url} />
-                <AvatarFallback>
-                  {getInitials(userProfile?.full_name || user.email)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="ml-4 flex-1">
-                <h2 className="text-xl font-semibold">
-                  {userProfile?.full_name || 'User'}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {user.email}
-                </p>
-                {error && (
-                  <p className="text-sm text-red-500 mt-1">
-                    Error loading profile: {error}
+            ) : (
+              <>
+                <Avatar className="h-20 w-20 flex-shrink-0 border-4 border-white shadow-lg">
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-[#292728] text-white text-xl">
+                    {getInitials(userProfile?.full_name || user.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-[#292728]">
+                      {userProfile?.full_name || 'User'}
+                    </h2>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500 mt-1">
+                    <Mail className="w-3 h-3 mr-1" />
+                    {user.email}
+                  </div>
+                  {error && (
+                    <div className="flex items-center text-sm text-red-500 mt-1">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {error}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </motion.div>
+
+          {/* Main Content */}
+          <motion.div 
+            variants={staggerContainer}
+            className="space-y-4"
+          >
+            {/* Personal Info Card */}
+            <motion.div variants={fadeIn} className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 px-4 py-3 border-b">
+                <h3 className="font-semibold text-[#292728]">Personal Information</h3>
+              </div>
+              
+              {/* Name Section */}
+              <div className="px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <User className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium">Full Name</span>
+                  </div>
+                  {!editingName && (
+                    <button 
+                      onClick={handleEditName}
+                      className="text-xs text-[#292728] font-medium flex items-center"
+                      disabled={loading}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+                {!editingName ? (
+                  <p className="mt-1 text-sm text-gray-600 ml-6">
+                    {userProfile?.full_name || 'Set your name'}
+                  </p>
+                ) : (
+                  <div className="mt-2 ml-6 space-y-2">
+                    <Input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="text-sm rounded-xl"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={handleSaveName}
+                        disabled={updatingName}
+                        className="rounded-xl bg-[#292728] hover:bg-black"
+                      >
+                        {updatingName ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingName(false);
+                          setFullName(userProfile?.full_name || '');
+                        }}
+                        disabled={updatingName}
+                        className="rounded-xl"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Phone Number Section */}
+              <div className="px-4 py-3 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium">Phone Number</span>
+                  </div>
+                  {!editingPhone && (
+                    <button 
+                      onClick={handleEditPhone}
+                      className="text-xs text-[#292728] font-medium flex items-center"
+                      disabled={loading}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+                
+                {!editingPhone ? (
+                  <p className="mt-1 text-sm text-gray-600 ml-6">
+                    {userProfile?.phone_number ? userProfile.phone_number : 'Add your phone number'}
+                  </p>
+                ) : (
+                  <div className="mt-2 ml-6 space-y-2">
+                    <Input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="Enter your phone number"
+                      maxLength={10}
+                      className="text-sm rounded-xl"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={handleSavePhone}
+                        disabled={updatingPhone}
+                        className="rounded-xl bg-[#292728] hover:bg-black"
+                      >
+                        {updatingPhone ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingPhone(false);
+                          setPhoneNumber(userProfile?.phone_number || '');
+                        }}
+                        disabled={updatingPhone}
+                        className="rounded-xl"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Password Section */}
+              <div className="px-4 py-3 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <KeyIcon className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium">Password</span>
+                  </div>
+                  {!changingPassword && (
+                    <button 
+                      onClick={handleResetPassword}
+                      className="text-xs text-[#292728] font-medium flex items-center"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Change
+                    </button>
+                  )}
+                </div>
+                
+                {changingPassword ? (
+                  <div className="mt-2 ml-6 space-y-2">
+                    <Input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Current password"
+                      className="text-sm rounded-xl"
+                    />
+                    
+                    <Input
+                      id="newPassword"
+                      name="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="New password"
+                      className="text-sm rounded-xl"
+                    />
+                    
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password" 
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Confirm new password"
+                      className="text-sm rounded-xl"
+                    />
+                    
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={handleUpdatePassword}
+                        disabled={updatingPassword}
+                        className="rounded-xl bg-[#292728] hover:bg-black"
+                      >
+                        {updatingPassword ? 'Updating...' : 'Update'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleCancelPasswordChange}
+                        disabled={updatingPassword}
+                        className="rounded-xl"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-600 ml-6">
+                    ••••••••
                   </p>
                 )}
               </div>
-            </>
-          )}
-        </div>
+            </motion.div>
 
-        {/* Phone Number Section */}
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Phone className="w-5 h-5 text-gray-500 mr-2" />
-              <span className="text-sm font-medium">Phone Number</span>
-            </div>
-            {!editingPhone && (
-              <button 
-                onClick={handleEditPhone}
-                className="text-xs text-indigo-600 flex items-center"
-                disabled={loading}
-              >
-                <Edit className="w-3 h-3 mr-1" />
-                Edit
-              </button>
-            )}
-          </div>
-          
-          {editingPhone ? (
-            <div className="mt-2 flex items-center gap-2">
-              <Input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter your phone number"
-                maxLength={10}
-                className="text-sm"
-              />
-              <Button 
-                size="sm" 
-                onClick={handleSavePhone}
-                disabled={updatingPhone}
-              >
-                {updatingPhone ? 'Saving...' : 'Save'}
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  setEditingPhone(false);
-                  setPhoneNumber(userProfile?.phone_number || '');
-                }}
-                disabled={updatingPhone}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <p className="mt-1 text-sm text-gray-600 ml-7">
-              {userProfile?.phone_number ? userProfile.phone_number : 'No phone number added'}
-            </p>
-          )}
-        </div>
-
-        {/* Navigation Sections */}
-        <div className="p-6 flex-1">
-          {loading ? (
-            // Loading skeletons for sections in a grid
-            <div className="grid grid-cols-2 gap-4">
-              {Array(4).fill(0).map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {sections.map((section) => (
-                <ProfileSection
-                  key={section.label}
-                  icon={section.icon}
-                  label={section.label}
-                  onClick={section.onClick}
-                  className={section.className}
-                />
-              ))}
-              
-              {/* Logout Section */}
-              <ProfileSection
-                icon={LogOut}
-                label="Logout"
-                onClick={handleLogout}
-                className="text-red-600 hover:bg-red-50 border-red-100"
-              />
-            </div>
-          )}
-        </div>
+            {/* Quick Actions */}
+            <motion.div variants={fadeIn} className="mt-6">
+              <h3 className="font-semibold text-[#292728] px-1 mb-3">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {loading ? (
+                  // Loading skeletons for sections in a grid
+                  Array(4).fill(0).map((_, i) => (
+                    <Skeleton key={i} className="h-24 rounded-xl" />
+                  ))
+                ) : (
+                  sections.map((section, index) => (
+                    <motion.div
+                      key={section.label}
+                      variants={fadeIn}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <button
+                        onClick={section.onClick}
+                        className="w-full flex flex-col items-center justify-center gap-2 py-6 text-gray-700 hover:bg-gray-50 transition-colors rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#292728]"
+                      >
+                        <section.icon className="w-6 h-6 text-[#292728]" />
+                        <span className="text-sm font-medium">{section.label}</span>
+                      </button>
+                    </motion.div>
+                  ))
+                )}
+                
+                {/* Logout Button */}
+                <motion.div
+                  variants={fadeIn}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.1 * sections.length }}
+                >
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex flex-col items-center justify-center gap-2 py-6 text-red-600 hover:bg-red-50 transition-colors rounded-xl border border-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <LogOut className="w-6 h-6" />
+                    <span className="text-sm font-medium">Logout</span>
+                  </button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ const SalePage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen bg-white p-4 max-w-[480px] mx-auto">
       {/* Header with back button */}
       <div className="flex items-center mb-6">
         <button

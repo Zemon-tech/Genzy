@@ -6,8 +6,10 @@ import Search from './pages/user/Search';
 import Cart from './pages/user/Cart';
 import Profile from './pages/user/Profile';
 import Login from './pages/user/Login';
+import UpdatePassword from './pages/user/UpdatePassword';
 import Wishlist from './pages/user/Wishlist';
 import SellerLogin from './pages/seller/Login';
+import SellerUpdatePassword from './pages/seller/UpdatePassword';
 import Dashboard from './pages/seller/Dashboard';
 import AddProduct from './pages/seller/AddProduct';
 import DashboardLayout from './components/seller/DashboardLayout';
@@ -87,26 +89,29 @@ const AnimatedRoutes = () => {
   // If we're going back, don't use animations at all
   if (!shouldAnimate) {
     return (
-      <Routes location={location}>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/wishlist" element={<Wishlist />} />
-        <Route path="/product/:productId" element={<ProductPage />} />
-        <Route path="/address" element={<Address />} />
-        <Route path="/category/:categorySlug" element={<CategoryPage />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-        <Route path="/orders" element={<MyOrders />} />
-        <Route path="/sale" element={<SalePage />} />
-        <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-      </Routes>
+      <div className="pb-20">
+        <Routes location={location}>
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/product/:productId" element={<ProductPage />} />
+          <Route path="/address" element={<Address />} />
+          <Route path="/category/:categorySlug" element={<CategoryPage />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+          <Route path="/orders" element={<MyOrders />} />
+          <Route path="/sale" element={<SalePage />} />
+          <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+        </Routes>
+      </div>
     );
   }
 
@@ -120,7 +125,7 @@ const AnimatedRoutes = () => {
         exit="out"
         variants={pageVariants}
         transition={pageTransition}
-        className="min-h-screen"
+        className="min-h-screen pb-20"
       >
         <Routes location={location}>
           <Route path="/" element={<Home />} />
@@ -128,6 +133,7 @@ const AnimatedRoutes = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/product/:productId" element={<ProductPage />} />
           <Route path="/address" element={<Address />} />
@@ -264,6 +270,7 @@ function App() {
                   // Seller Routes with full-width layout
                   <Routes>
                     <Route path="/seller/login" element={<SellerLogin />} />
+                    <Route path="/seller/update-password" element={<SellerUpdatePassword />} />
                     <Route path="/seller" element={<DashboardLayout />}>
                       <Route index element={<Navigate to="/seller/dashboard" replace />} />
                       <Route path="dashboard" element={<Dashboard />} />

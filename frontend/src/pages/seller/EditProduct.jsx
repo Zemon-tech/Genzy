@@ -20,6 +20,7 @@ const EditProduct = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [previewImages, setPreviewImages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [sizeChartImages, setSizeChartImages] = useState({
     image1: null,
@@ -186,72 +187,67 @@ const EditProduct = () => {
     }
   };
 
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    const newImages = [];
     const newPreviewImages = [];
+    const validFiles = [];
+
+    // Validate file types and size
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const maxSize = 1.46 * 1024 * 1024; // 1.46MB
 
     for (const file of files) {
-      try {
-        // Sanitize filename: remove special characters and spaces
-        const timestamp = Date.now();
-        const sanitizedName = file.name
-          .replace(/[^a-zA-Z0-9.]/g, '_') // Replace special chars with underscore
-          .replace(/\s+/g, '_'); // Replace spaces with underscore
-        const fileName = `${timestamp}_${sanitizedName}`;
+      // Log file information for debugging
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
 
-        console.log('Uploading file with name:', fileName);
-
-        const { data, error } = await supabase.storage
-          .from('productimages')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true, // Change to true to overwrite if exists
-            contentType: file.type // Explicitly set content type
-          });
-
-        if (error) {
-          console.error('Upload error:', error);
-          throw error;
-        }
-
-        console.log('Upload successful:', data);
-
-        // Get the public URL for the image
-        const { data: publicURLData } = supabase
-          .storage
-          .from('productimages')
-          .getPublicUrl(data.path);
-
-        console.log('Generated public URL:', publicURLData);
-
-        const imageUrl = publicURLData.publicUrl;
-        newImages.push(imageUrl);
-        newPreviewImages.push(URL.createObjectURL(file));
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        setError('Error uploading image: ' + (error.message || 'Unknown error'));
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        setError(`File "${file.name}" is not supported. Please upload JPEG, JPG or PNG images only.`);
+        continue;
       }
+
+      // Validate file size
+      if (file.size > maxSize) {
+        setError(`File "${file.name}" is too large. Maximum size is 1.46MB.`);
+        continue;
+      }
+
+      // Store valid files for later upload
+      validFiles.push(file);
+      newPreviewImages.push(URL.createObjectURL(file));
     }
 
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...newImages]
-    }));
-    setPreviewImages(prev => [...prev, ...newPreviewImages]);
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setPreviewImages(prev => [...prev, ...newPreviewImages.map(url => ({ isNew: true, url }))]);
+      setError(''); // Clear error if at least one image was valid
+      setSuccess(`${validFiles.length} files ready for upload when the product is saved.`);
+    }
   };
 
   const handleDeleteImage = (indexToDelete) => {
-    const imageUrl = formData.images[indexToDelete];
+    const image = previewImages[indexToDelete];
     
-    if (imageUrl) {
-      setImagesToDelete(prev => [...prev, imageUrl]);
+    // If it's an existing image (has a URL from the server)
+    if (typeof image === 'string') {
+      setImagesToDelete(prev => [...prev, image]);
+      
+      // Remove from formData.images
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, index) => index !== indexToDelete)
+      }));
+    } else if (image && image.isNew) {
+      // If it's a newly added image (has a preview URL)
+      // Remove from selectedFiles
+      setSelectedFiles(prev => prev.filter((_, index) => index !== indexToDelete));
     }
-
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, index) => index !== indexToDelete)
-    }));
+    
+    // Remove from preview images
     setPreviewImages(prev => prev.filter((_, index) => index !== indexToDelete));
   };
 
@@ -276,62 +272,104 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.images.length === 0) {
-      setError('Please upload at least one image');
-      return;
-    }
-
-    // Validate the selling price against MRP
-    if (parseFloat(formData.selling_price) > parseFloat(formData.mrp)) {
-      setError('Selling price cannot be greater than MRP');
-      return;
-    }
-
-    // Validate word counts
-    const nameWords = formData.name.trim().split(/\s+/).length;
-    const descriptionWords = formData.description.trim().split(/\s+/).length;
     
-    if (nameWords > 7) {
-      setError('Product name cannot exceed 7 words');
-      return;
-    }
-    
-    if (descriptionWords > 99) {
-      setError('Product description cannot exceed 99 words');
-      return;
-    }
-
     try {
       setLoading(true);
       setError('');
-
-      // Create a copy of formData without the has_multiple_colors field
-      const dataToUpdate = {
-        ...formData,
-        updated_at: new Date().toISOString(),
-      };
+      setSuccess('');
       
-      // Don't include has_multiple_colors in the data sent to the server
-      delete dataToUpdate.has_multiple_colors;
+      // Validate the selling price against MRP
+      if (parseFloat(formData.selling_price) > parseFloat(formData.mrp)) {
+        setError('Selling price cannot be greater than MRP');
+        return;
+      }
+
+      // Validate word counts
+      const nameWords = formData.name.trim().split(/\s+/).length;
+      const descriptionWords = formData.description.trim().split(/\s+/).length;
       
-      // First, update the product
-      const { error: updateError } = await supabase
-        .from('products')
-        .update(dataToUpdate)
-        .eq('id', productId);
+      if (nameWords > 7) {
+        setError('Product name cannot exceed 7 words');
+        return;
+      }
+      
+      if (descriptionWords > 99) {
+        setError('Product description cannot exceed 99 words');
+        return;
+      }
 
-      if (updateError) throw updateError;
-
-      // Then delete any images marked for deletion
+      // Delete any images that were marked for deletion
       if (imagesToDelete.length > 0) {
         await deleteImagesFromStorage(imagesToDelete);
       }
+      
+      // Upload any new images that were selected
+      const uploadedImageUrls = [];
+      
+      for (const file of selectedFiles) {
+        // Sanitize filename: remove special characters and spaces
+        const timestamp = Date.now();
+        const sanitizedName = file.name
+          .replace(/[^a-zA-Z0-9.]/g, '_')
+          .replace(/\s+/g, '_');
+        const fileName = `${timestamp}_${sanitizedName}`;
+
+        console.log('Uploading file with name:', fileName);
+
+        // Upload the file
+        const { data, error } = await supabase.storage
+          .from('productimages')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type
+          });
+
+        if (error) {
+          console.error('Supabase upload error:', error);
+          throw error;
+        }
+
+        console.log('Upload successful:', data);
+
+        // Get the public URL for the image
+        const { data: publicURLData } = supabase
+          .storage
+          .from('productimages')
+          .getPublicUrl(data.path);
+
+        console.log('Generated public URL:', publicURLData);
+        uploadedImageUrls.push(publicURLData.publicUrl);
+      }
+      
+      // Create updated product data
+      const productData = {
+        ...formData,
+        // Combine existing images with new uploaded images
+        images: [...formData.images, ...uploadedImageUrls],
+        updated_at: new Date().toISOString(),
+      };
+
+      // Remove has_multiple_colors as it's not a database field
+      delete productData.has_multiple_colors;
+      
+      console.log('Updating product with data:', productData);
+
+      const { error: updateError } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', productId);
+
+      if (updateError) {
+        throw updateError;
+      }
 
       setSuccess('Product updated successfully!');
-      setImagesToDelete([]);
-    } catch (error) {
-      console.error('Error updating product:', error);
-      setError('Error updating product: ' + error.message);
+      // Navigate back to products page after successful update
+      setTimeout(() => navigate('/seller/products'), 1500);
+    } catch (err) {
+      console.error('Error updating product:', err);
+      setError('Error updating product: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -342,6 +380,12 @@ const EditProduct = () => {
       <div className="max-w-[1200px] mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Edit Product</h1>
+          <button
+            onClick={() => navigate('/seller/products')}
+            className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
+          >
+            Cancel
+          </button>
         </div>
 
         {error && (
@@ -635,6 +679,14 @@ const EditProduct = () => {
                     file:bg-indigo-50 file:text-indigo-700
                     hover:file:bg-indigo-100"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Images will be uploaded when product is saved
+                </p>
+                {selectedFiles.length > 0 && (
+                  <div className="text-sm text-gray-600 mt-2">
+                    {selectedFiles.length} new {selectedFiles.length === 1 ? 'image' : 'images'} selected
+                  </div>
+                )}
               </div>
             </div>
 
@@ -697,25 +749,33 @@ const EditProduct = () => {
             </div>
 
             {/* Preview Section */}
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-lg shadow mt-4">
               <h2 className="text-xl font-semibold mb-4">Product Preview</h2>
               <div className="grid grid-cols-2 gap-4 mt-4">
-                {previewImages.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteImage(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                {previewImages.map((item, index) => {
+                  const url = typeof item === 'string' ? item : item.url;
+                  return (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(index)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                      {typeof item !== 'string' && item.isNew && (
+                        <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          New
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold">{formData.name || 'Product Name'}</h3>
@@ -745,13 +805,16 @@ const EditProduct = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-4">
+            <div className="mt-6">
               <button
                 type="submit"
+                onClick={handleSubmit}
                 disabled={loading}
-                className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                className={`w-full py-3 px-6 rounded-md text-white font-medium ${
+                  loading ? 'bg-gray-400' : 'bg-black hover:bg-gray-800'
+                }`}
               >
-                {loading ? 'Updating Product...' : 'Update Product'}
+                {loading ? 'Updating...' : 'Update Product'}
               </button>
             </div>
           </form>

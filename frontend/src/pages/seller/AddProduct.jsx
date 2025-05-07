@@ -48,6 +48,7 @@ const AddProduct = () => {
   const [previewImages, setPreviewImages] = useState([]);
   const [nameWordCount, setNameWordCount] = useState(0);
   const [descriptionWordCount, setDescriptionWordCount] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // Fetch size chart images for this seller
   useEffect(() => {
@@ -144,99 +145,52 @@ const AddProduct = () => {
     }
   };
 
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    const newImages = [];
     const newPreviewImages = [];
+    const validFiles = [];
 
     // Validate file types and size
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     const maxSize = 1.46 * 1024 * 1024; // 1.46MB
 
     for (const file of files) {
-      try {
-        // Log file information for debugging
-        console.log('File details:', {
-          name: file.name,
-          type: file.type,
-          size: file.size
-        });
+      // Log file information for debugging
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
 
-        // Validate file type
-        if (!allowedTypes.includes(file.type)) {
-          setError(`File "${file.name}" is not supported. Please upload JPEG, JPG or PNG images only.`);
-          continue;
-        }
-
-        // Validate file size
-        if (file.size > maxSize) {
-          setError(`File "${file.name}" is too large. Maximum size is 1.46MB.`);
-          continue;
-        }
-
-        // Sanitize filename: remove special characters and spaces
-        const timestamp = Date.now();
-        const sanitizedName = file.name
-          .replace(/[^a-zA-Z0-9.]/g, '_')
-          .replace(/\s+/g, '_');
-        const fileName = `${timestamp}_${sanitizedName}`;
-
-        console.log('Uploading file with name:', fileName);
-
-        // Upload the file
-        const { data, error } = await supabase.storage
-          .from('productimages')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true, // Changed to true to overwrite if exists
-            contentType: file.type // Explicitly set content type
-          });
-
-        if (error) {
-          console.error('Supabase upload error:', error);
-          throw error;
-        }
-
-        console.log('Upload successful:', data);
-
-        // Get the public URL for the image
-        const { data: publicURLData } = supabase
-          .storage
-          .from('productimages')
-          .getPublicUrl(data.path);
-
-        console.log('Generated public URL:', publicURLData);
-
-        const imageUrl = publicURLData.publicUrl;
-        newImages.push(imageUrl);
-        newPreviewImages.push(URL.createObjectURL(file));
-
-        // Show success message
-        setSuccess(`File "${file.name}" uploaded successfully!`);
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        setError(
-          error.message === 'invalid_mime_type' 
-            ? `File "${file.name}" upload failed: Invalid file type. Please upload JPEG, JPG or PNG images only.`
-            : `Error uploading "${file.name}": ${error.message || 'Unknown error'}`
-        );
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        setError(`File "${file.name}" is not supported. Please upload JPEG, JPG or PNG images only.`);
+        continue;
       }
+
+      // Validate file size
+      if (file.size > maxSize) {
+        setError(`File "${file.name}" is too large. Maximum size is 1.46MB.`);
+        continue;
+      }
+
+      // Store valid files for later upload
+      validFiles.push(file);
+      newPreviewImages.push(URL.createObjectURL(file));
     }
 
-    if (newImages.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages]
-      }));
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
       setPreviewImages(prev => [...prev, ...newPreviewImages]);
-      setError(''); // Clear error if at least one image was uploaded successfully
+      setError(''); // Clear error if at least one image was valid
+      setSuccess(`${validFiles.length} files ready for upload when the product is saved.`);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.images.length === 0) {
-      setError('Please upload at least one image');
+    if (selectedFiles.length === 0) {
+      setError('Please select at least one image');
       return;
     }
 
@@ -263,6 +217,7 @@ const AddProduct = () => {
     try {
       setLoading(true);
       setError('');
+      setSuccess('');
       
       console.log('Current seller:', seller);
 
@@ -272,9 +227,49 @@ const AddProduct = () => {
         return;
       }
 
-      // Create a copy of formData without the has_multiple_colors field
+      // First, upload all images
+      const uploadedImageUrls = [];
+      
+      for (const file of selectedFiles) {
+        // Sanitize filename: remove special characters and spaces
+        const timestamp = Date.now();
+        const sanitizedName = file.name
+          .replace(/[^a-zA-Z0-9.]/g, '_')
+          .replace(/\s+/g, '_');
+        const fileName = `${timestamp}_${sanitizedName}`;
+
+        console.log('Uploading file with name:', fileName);
+
+        // Upload the file
+        const { data, error } = await supabase.storage
+          .from('productimages')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type
+          });
+
+        if (error) {
+          console.error('Supabase upload error:', error);
+          throw error;
+        }
+
+        console.log('Upload successful:', data);
+
+        // Get the public URL for the image
+        const { data: publicURLData } = supabase
+          .storage
+          .from('productimages')
+          .getPublicUrl(data.path);
+
+        console.log('Generated public URL:', publicURLData);
+        uploadedImageUrls.push(publicURLData.publicUrl);
+      }
+
+      // Create a copy of formData including the uploaded image URLs
       const productData = {
         ...formData,
+        images: uploadedImageUrls, // Use the newly uploaded image URLs
         seller_id: String(seller.id),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -329,6 +324,7 @@ const AddProduct = () => {
     });
     setHasMultipleColors(false);
     setPreviewImages([]);
+    setSelectedFiles([]);
     setNameWordCount(0);
     setDescriptionWordCount(0);
   };
@@ -775,8 +771,11 @@ const AddProduct = () => {
                         {/* You can add an upload icon here */}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Click to upload images (max 5)
+                        Click to select images (max 5)
                       </div>
+                      <p className="text-xs text-gray-500">
+                        Images will be uploaded when product is submitted
+                      </p>
                     </div>
                   </label>
                 </div>
@@ -793,9 +792,25 @@ const AddProduct = () => {
                         alt={`Preview ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Remove the file and preview
+                          setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                          setPreviewImages(prev => prev.filter((_, i) => i !== index));
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>
+                {selectedFiles.length > 0 && (
+                  <div className="text-sm text-gray-600 mt-2">
+                    {selectedFiles.length} {selectedFiles.length === 1 ? 'image' : 'images'} selected (will be uploaded when saved)
+                  </div>
+                )}
               </div>
             </div>
           </div>

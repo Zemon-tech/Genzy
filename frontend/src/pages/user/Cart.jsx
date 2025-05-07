@@ -342,7 +342,7 @@ const Cart = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-[480px] mx-auto px-4 py-6">
         <AnimatePresence mode="wait">
           {loading ? (
             <LoadingSkeleton />
