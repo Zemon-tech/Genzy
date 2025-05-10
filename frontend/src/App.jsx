@@ -39,6 +39,7 @@ import TermsPage from './pages/user/TermsPage';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkInstallationEligibility } from './utils/pwaHelpers';
 import { shouldSkipOfflinePage } from './registerSW';
+import CollectionPage from './pages/user/CollectionPage';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -50,6 +51,7 @@ import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import AdminFeaturedCategories from './pages/admin/FeaturedCategories';
 import AdminHavendripCollection from './pages/admin/HavendripCollection';
+import Collection from './pages/admin/Collection';
 
 // Animation variants
 const pageVariants = {
@@ -110,6 +112,7 @@ const AnimatedRoutes = () => {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/collection/:name" element={<CollectionPage />} />
         </Routes>
       </div>
     );
@@ -147,6 +150,7 @@ const AnimatedRoutes = () => {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/collection/:name" element={<CollectionPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -264,6 +268,7 @@ function App() {
                       <Route path="orders" element={<AdminOrders />} />
                       <Route path="featured-categories" element={<AdminFeaturedCategories />} />
                       <Route path="havendrip-collection" element={<AdminHavendripCollection />} />
+                      <Route path="collection/:name" element={<Collection />} />
                     </Route>
                   </Routes>
                 ) : isSellerRoute ? (
