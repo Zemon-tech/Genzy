@@ -1,0 +1,18 @@
+# Development files
+node_modules/
+.DS_Store
+*.log
+
+# Build artifacts
+dist/
+dev-dist/
+
+# Testing files
+coverage/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 

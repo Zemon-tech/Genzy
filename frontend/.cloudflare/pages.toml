@@ -1,0 +1,7 @@
+[build]
+command = "yarn install && yarn build:cloudflare"
+publish = "dist"
+
+[build.environment]
+NODE_VERSION = "18.17.1"
+YARN_ENABLE_IMMUTABLE_INSTALLS = "false" 

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "pwa-build": "node scripts/generate-icons.js && vite build",
+    "build:cloudflare": "vite build && cp _redirects dist/_redirects",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -50,5 +51,6 @@
     "tailwindcss": "^3.4.1",
     "vite": "^5.0.12",
     "vite-plugin-pwa": "^0.19.0"
-  }
+  },
+  "packageManager": "yarn@3.6.3"
 }

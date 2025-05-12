@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'node:url'
 import { VitePWA } from 'vite-plugin-pwa'
+import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -138,7 +139,17 @@ export default defineConfig({
         type: 'module',
         navigateFallback: 'index.html'
       }
-    })
+    }),
+    {
+      name: 'copy-files',
+      closeBundle() {
+        // Copy _redirects file to dist folder
+        if (fs.existsSync('_redirects')) {
+          fs.copyFileSync('_redirects', 'dist/_redirects');
+          console.log('_redirects file copied to dist folder');
+        }
+      }
+    }
   ],
   resolve: {
     alias: {
@@ -150,6 +161,16 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-avatar', '@radix-ui/react-dialog', '@radix-ui/react-label', '@radix-ui/react-slot'],
+          utils: ['class-variance-authority', 'clsx', 'tailwind-merge', 'framer-motion'],
+          supabase: ['@supabase/supabase-js']
+        }
+      }
+    }
   },
   // Development server settings
   server: {
