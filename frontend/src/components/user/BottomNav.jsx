@@ -15,7 +15,7 @@ const BottomNav = () => {
     },
     {
       icon: Search,
-      label: 'Search',
+      label: 'Discover',
       path: '/search'
     },
     {

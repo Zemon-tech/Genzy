@@ -48,50 +48,82 @@ const Footer = () => {
     };
   }, []);
 
-  // Handle install button click
-  const handleInstallClick = () => {
-    console.log("PWA DEBUG: Install button clicked, deferredPrompt:", deferredPrompt);
+  // Handle share functionality
+  const handleShare = async () => {
+    const shareText = "I Found This Gen Z Fashion Goldmine 💅🔥 Check out Haven Drip!";
     
-    if (!deferredPrompt) {
-      console.log("PWA DEBUG: No deferred prompt available, showing manual install instructions");
-      alert(installInstructions);
-      return;
-    }
-
-    // Show the install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('PWA DEBUG: User accepted the install prompt');
+    try {
+      if (navigator.share) {
+        console.log("Web Share API available, attempting to share");
+        await navigator.share({
+          title: 'Haven Fashion',
+          text: shareText,
+          url: window.location.href,
+        });
+        console.log('Content shared successfully');
       } else {
-        console.log('PWA DEBUG: User dismissed the install prompt');
+        console.log("Web Share API not available, using clipboard fallback");
+        // Fallback for browsers that don't support Web Share API
+        const shareMessage = `${shareText} ${window.location.href}`;
+        await navigator.clipboard.writeText(shareMessage);
+        alert('Share message copied to clipboard! Paste it to share with friends.');
       }
-      // Clear the saved prompt
-      setDeferredPrompt(null);
-    });
+    } catch (error) {
+      console.error('Error sharing:', error);
+      
+      // Additional fallback if clipboard API fails
+      if (error.name === 'NotAllowedError') {
+        alert('Permission to share was denied. You can manually copy the current URL.');
+      } else {
+        try {
+          // Try clipboard as a last resort
+          const shareMessage = `${shareText} ${window.location.href}`;
+          await navigator.clipboard.writeText(shareMessage);
+          alert('Share message copied to clipboard! Paste it to share with friends.');
+        } catch (clipboardError) {
+          console.error('Clipboard fallback failed:', clipboardError);
+          alert('Unable to share. Please manually copy the URL from your address bar.');
+        }
+      }
+    }
   };
 
-  // Handle share functionality
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Haven Fashion',
-        text: 'Check out these amazing fashion products!',
-        url: window.location.origin,
-      })
-      .catch((error) => console.log('Error sharing:', error));
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => alert('Link copied to clipboard!'))
-        .catch((error) => console.log('Error copying link:', error));
+  // Enhanced install button handling
+  const handleInstallClick = async () => {
+    console.log("PWA DEBUG: Install button clicked, deferredPrompt:", deferredPrompt);
+    
+    try {
+      if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`PWA DEBUG: User ${outcome} the install prompt`);
+        
+        // Clear the saved prompt
+        setDeferredPrompt(null);
+      } else if (isStandalone) {
+        // If already installed, show a message
+        alert('This app is already installed on your device!');
+      } else {
+        // Show manual install instructions
+        console.log("PWA DEBUG: No deferred prompt available, showing manual instructions");
+        
+        // Modern browsers may need user gesture to show alerts
+        setTimeout(() => {
+          alert(installInstructions || 'To install this app, add it to your home screen from your browser menu.');
+        }, 100);
+      }
+    } catch (error) {
+      console.error('PWA DEBUG: Install error:', error);
+      alert('There was a problem installing the app. Please try adding to home screen from your browser menu.');
     }
   };
 
   // Check if we're already in standalone mode
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
   const installButtonText = isStandalone ? "Already Installed" : "Install App";
 
   return (
@@ -106,6 +138,7 @@ const Footer = () => {
                 ? "bg-gray-200 text-gray-500" 
                 : "bg-white text-customBlack hover:bg-gray-100"
             }`}
+            aria-label={installButtonText}
           >
             <Download size={18} />
             {installButtonText}
@@ -126,10 +159,10 @@ const Footer = () => {
           <button 
             onClick={handleShare}
             className="p-3 rounded-full bg-gray-800 hover:bg-blue-600 transition-all duration-300 transform hover:scale-110 hover:rotate-3 hover:shadow-lg flex items-center gap-2"
-            aria-label="Share"
+            aria-label="Share with Friends"
           >
             <Share2 size={20} />
-            <span className="text-sm">Share</span>
+            <span className="text-sm">Share with Friends</span>
           </button>
           <a 
             href="mailto:nameste.kayo@gmail.com" 

@@ -40,6 +40,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { checkInstallationEligibility } from './utils/pwaHelpers';
 import { shouldSkipOfflinePage } from './registerSW';
 import CollectionPage from './pages/user/CollectionPage';
+import CollectionsPage from './pages/user/CollectionsPage';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -113,6 +114,7 @@ const AnimatedRoutes = () => {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/collection/:name" element={<CollectionPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
         </Routes>
       </div>
     );
@@ -151,6 +153,7 @@ const AnimatedRoutes = () => {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/collection/:name" element={<CollectionPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, STYLE_TYPES } from '../../utils/constants';
+import { useNavigate } from 'react-router-dom';
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +22,8 @@ const Search = () => {
   // Define categories and styles - include 'all' option first
   const filterCategories = ['all', ...CATEGORIES.map(cat => cat.toLowerCase())];
   const filterStyles = ['all', ...STYLE_TYPES.map(style => style.toLowerCase())];
+
+  const navigate = useNavigate();
 
   // Fetch all brand names for better search
   useEffect(() => {
@@ -529,10 +532,10 @@ const Search = () => {
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3">
+                  <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3 pb-24">
                     <button
                       onClick={resetFilters}
-                      className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-600 font-medium"
+                      className="flex-1 py-2.5 rounded-lg text-gray-600 font-medium bg-gradient-to-r from-transparent via-gray-300 to-transparent bg-[length:100%_1px] bg-bottom bg-no-repeat hover:bg-[length:100%_2px] transition-all"
                     >
                       Reset
                     </button>
@@ -541,7 +544,7 @@ const Search = () => {
                         applyFilters();
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 py-2 rounded-lg bg-[#292728] text-white font-medium"
+                      className="flex-1 py-2.5 rounded-lg text-[#292728] font-medium bg-gradient-to-r from-[#eaaa07]/50 via-[#eaaa07] to-[#eaaa07]/50 bg-[length:100%_1px] bg-bottom bg-no-repeat hover:bg-[length:100%_2px] transition-all"
                     >
                       Apply Filters
                     </button>
@@ -575,6 +578,93 @@ const Search = () => {
                 ))
               )}
             </div>
+
+            {/* Explore Havendrip Collection - shown when products exist */}
+            {!loading && products.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-8 mb-12 bg-gradient-to-br from-[#292728] to-[#292728]/90 rounded-xl overflow-hidden shadow-md"
+              >
+                <div className="p-4 text-white">
+                  <h3 className="text-lg font-bold mb-1 flex items-center">
+                    <span className="mr-2">Explore Havendrip</span>
+                    <span className="text-[#eaaa07]">Collection</span>
+                  </h3>
+                  <p className="text-xs text-white/80 mb-2">
+                    Discover our exclusive premium collection with unique designs.
+                  </p>
+                  <div className="flex space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg key={star} className="w-3 h-3 text-[#eaaa07]" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="relative h-32 overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#292728] to-transparent z-10"></div>
+                  <img 
+                    src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" 
+                    alt="Havendrip Collection Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                <div className="px-4 py-3 flex items-center justify-between bg-[#eaaa07]/10">
+                  <span className="text-[#eaaa07] text-sm font-medium">Premium Collection</span>
+                  <button 
+                    onClick={() => navigate('/collections')} 
+                    className="px-3 py-1.5 bg-[#eaaa07] text-[#292728] rounded-full text-xs font-medium transition-all hover:shadow-md flex items-center"
+                  >
+                    Explore
+                    <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+            
+            {/* Explore Havendrip Collection - shown when no products found */}
+            {!loading && products.length === 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mt-6 mb-12 bg-gradient-to-br from-[#292728] to-[#292728]/90 rounded-xl overflow-hidden shadow-md"
+              >
+                <div className="p-4 text-white">
+                  <h3 className="text-lg font-bold mb-1">We couldn&apos;t find what you&apos;re looking for</h3>
+                  <p className="text-xs text-white/80 mb-2">
+                    Check out our exclusive Havendrip Collection instead!
+                  </p>
+                </div>
+                
+                <div className="relative h-40 overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#292728] to-transparent z-10"></div>
+                  <img 
+                    src="https://images.unsplash.com/photo-1551232864-3f0890e580d9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" 
+                    alt="Havendrip Collection Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                <div className="p-3 flex flex-col items-center">
+                  <button 
+                    onClick={() => navigate('/collections')}
+                    className="w-full py-2 bg-[#eaaa07] text-[#292728] rounded-full text-sm font-medium transition-all hover:shadow-md flex items-center justify-center"
+                  >
+                    Explore Havendrip Collection
+                    <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </button>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
