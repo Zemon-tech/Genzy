@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd backend && npm install"
-watchPatterns = ["backend/**"]
+buildCommand = "cd backend && npm install && cd ../frontend && yarn install && yarn build"
+watchPatterns = ["backend/**", "frontend/**"]
 
 [deploy]
 startCommand = "cd backend && npm start"

@@ -4,10 +4,10 @@ FROM node:20-alpine as build
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package*.json yarn.lock ./
 
 # Install dependencies
-RUN npm install
+RUN yarn install
 
 # Copy source code
 COPY . .
@@ -23,7 +23,7 @@ ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 
 # Build the application
-RUN npm run build
+RUN yarn build
 
 # Production stage
 FROM nginx:alpine
