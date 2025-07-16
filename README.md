@@ -1,4 +1,4 @@
-GENZY
+havendrip(aka genzy)
 
 Empowering Innovation, Elevating Experiences Daily
 
@@ -18,9 +18,9 @@ Usage
 Testing
 Overview
 
-Genzy is an all-in-one developer toolset crafted to simplify the development, management, and deployment of full-stack web applications. It offers a robust architecture with clear migration instructions, containerized environments, and modern frontend styling with Tailwind CSS and PWA capabilities.
+havendrip is an all-in-one developer toolset crafted to simplify the development, management, and deployment of full-stack web applications. It offers a robust architecture with clear migration instructions, containerized environments, and modern frontend styling with Tailwind CSS and PWA capabilities.
 
-Why Genzy?
+Why havendrip?
 
 This project aims to streamline your development workflow and ensure application stability. The core features include:
 
